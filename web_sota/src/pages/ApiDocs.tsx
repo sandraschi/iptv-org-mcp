@@ -18,9 +18,15 @@ export function ApiDocsPage() {
   const src = view === "swagger" ? "/docs" : "/redoc";
   return (
     <div>
-      <PageHeader title="API Docs" sub="Live Swagger UI + ReDoc from the FastAPI backend">
+      <PageHeader
+        title="API Docs"
+        sub="Live Swagger UI + ReDoc from the FastAPI backend"
+      >
         <button
-          onClick={() => setView((v) => (v === "swagger" ? "redoc" : "swagger"))}
+          type="button"
+          onClick={() =>
+            setView((v) => (v === "swagger" ? "redoc" : "swagger"))
+          }
           data-testid="apidocs-toggle"
           className="rounded-lg border border-input px-3 py-1.5 text-sm hover:bg-secondary"
         >
@@ -37,9 +43,15 @@ export function ApiDocsPage() {
         </a>
       </PageHeader>
       <Card className="mb-3">
-        <div className="flex gap-2 overflow-x-auto text-xs" data-testid="apidocs-quickref">
+        <div
+          className="flex gap-2 overflow-x-auto text-xs"
+          data-testid="apidocs-quickref"
+        >
           {QUICK_REF.map((q) => (
-            <code key={q} className="whitespace-nowrap rounded-md bg-secondary px-2 py-1 font-mono">
+            <code
+              key={q}
+              className="whitespace-nowrap rounded-md bg-secondary px-2 py-1 font-mono"
+            >
               {q}
             </code>
           ))}

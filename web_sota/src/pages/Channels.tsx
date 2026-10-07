@@ -8,7 +8,9 @@ export function ChannelsPage() {
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
   const [category, setCategory] = useState("");
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    [],
+  );
   const [rows, setRows] = useState<Channel[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,9 @@ export function ChannelsPage() {
   );
 
   useEffect(() => {
-    api<{ success: boolean; categories: { id: string; name: string }[] }>("/api/iptv/facets")
+    api<{ success: boolean; categories: { id: string; name: string }[] }>(
+      "/api/iptv/facets",
+    )
       .then((r) => setCategories(r.categories ?? []))
       .catch(() => setCategories([]));
   }, []);
@@ -33,9 +37,11 @@ export function ChannelsPage() {
     setPage(1);
     try {
       const params = new URLSearchParams({ query, country, category });
-      const res = await api<{ success: boolean; message: string; channels: Channel[] }>(
-        `/api/iptv/search?${params}`,
-      );
+      const res = await api<{
+        success: boolean;
+        message: string;
+        channels: Channel[];
+      }>(`/api/iptv/search?${params}`);
       setRows(res.channels ?? []);
       setTotal((res.channels ?? []).length);
     } catch (e) {
@@ -49,12 +55,16 @@ export function ChannelsPage() {
 
   const filtered = useMemo(() => {
     let out = rows.filter((c) =>
-      search ? (c.name + c.id).toLowerCase().includes(search.toLowerCase()) : true,
+      search
+        ? (c.name + c.id).toLowerCase().includes(search.toLowerCase())
+        : true,
     );
     if (onlyNsfw === "safe") out = out.filter((c) => !c.is_nsfw);
     if (onlyNsfw === "nsfw") out = out.filter((c) => c.is_nsfw);
     out = [...out].sort((a, b) =>
-      sort === "name" ? a.name.localeCompare(b.name) : (a.country ?? "").localeCompare(b.country ?? ""),
+      sort === "name"
+        ? a.name.localeCompare(b.name)
+        : (a.country ?? "").localeCompare(b.country ?? ""),
     );
     return out;
   }, [rows, search, onlyNsfw, sort]);
@@ -64,8 +74,12 @@ export function ChannelsPage() {
 
   return (
     <div>
-      <PageHeader title="Channels" sub="Search the curated database (NSFW hidden by default)">
+      <PageHeader
+        title="Channels"
+        sub="Search the curated database (NSFW hidden by default)"
+      >
         <button
+          type="button"
           onClick={run}
           disabled={loading}
           data-testid="channels-search-btn"
@@ -105,7 +119,9 @@ export function ChannelsPage() {
         </select>
         <select
           value={onlyNsfw}
-          onChange={(e) => setOnlyNsfw(e.target.value as "all" | "safe" | "nsfw")}
+          onChange={(e) =>
+            setOnlyNsfw(e.target.value as "all" | "safe" | "nsfw")
+          }
           data-testid="channels-nsfw"
           className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
         >
@@ -114,7 +130,11 @@ export function ChannelsPage() {
           <option value="nsfw">Only NSFW</option>
         </select>
       </Card>
-      {error ? <Card className="mb-4 border-red-500/40 text-sm text-red-400">{error}</Card> : null}
+      {error ? (
+        <Card className="mb-4 border-red-500/40 text-sm text-red-400">
+          {error}
+        </Card>
+      ) : null}
       <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
         <input
           value={search}
@@ -139,6 +159,7 @@ export function ChannelsPage() {
           <option value="country">Sort: country</option>
         </select>
         <button
+          type="button"
           onClick={() => {
             const v = view === "list" ? "grid" : "list";
             setView(v);
@@ -149,18 +170,28 @@ export function ChannelsPage() {
         >
           {view === "list" ? "Grid" : "List"}
         </button>
-        <span data-testid="channels-count" className="ml-auto text-muted-foreground">
+        <span
+          data-testid="channels-count"
+          className="ml-auto text-muted-foreground"
+        >
           {pageRows.length} of {filtered.length} (fetched {total})
         </span>
       </div>
       {pageRows.length === 0 && !loading ? (
         <EmptyState text="No channels yet. Run a search above (empty query lists the country/category slice)." />
       ) : null}
-      <div className={view === "grid" ? "grid gap-2 md:grid-cols-2" : "space-y-2"}>
+      <div
+        className={view === "grid" ? "grid gap-2 md:grid-cols-2" : "space-y-2"}
+      >
         {pageRows.map((c) => (
           <Card key={c.id} className="flex items-center gap-3 py-2.5">
             {c.logo ? (
-              <img src={c.logo} alt="" className="h-8 w-12 rounded object-contain" loading="lazy" />
+              <img
+                src={c.logo}
+                alt=""
+                className="h-8 w-12 rounded object-contain"
+                loading="lazy"
+              />
             ) : null}
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{c.name}</div>
@@ -175,6 +206,7 @@ export function ChannelsPage() {
       {pages > 1 ? (
         <div className="mt-3 flex items-center gap-2 text-sm">
           <button
+            type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
             data-testid="channels-prev"
@@ -186,6 +218,7 @@ export function ChannelsPage() {
             Page {page} of {pages}
           </span>
           <button
+            type="button"
             disabled={page >= pages}
             onClick={() => setPage((p) => p + 1)}
             data-testid="channels-next"
