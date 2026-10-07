@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, EmptyState, PageHeader } from "@/components/AppLayout";
 import { api, type PlaylistInfo } from "@/lib/api";
 
@@ -8,22 +8,28 @@ export function PlaylistsPage() {
   const [probe, setProbe] = useState(false);
   const [maxEntries, setMaxEntries] = useState(200);
   const [building, setBuilding] = useState(false);
-  const [result, setResult] = useState<{ playlist_url: string; stats: { kept: number; excluded: number } } | null>(null);
+  const [result, setResult] = useState<{
+    playlist_url: string;
+    stats: { kept: number; excluded: number };
+  } | null>(null);
   const [existing, setExisting] = useState<PlaylistInfo[]>([]);
   const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
-      const res = await api<{ success: boolean; data: { playlists: PlaylistInfo[] } }>("/api/playlists");
+      const res = await api<{
+        success: boolean;
+        data: { playlists: PlaylistInfo[] };
+      }>("/api/playlists");
       setExisting(res.data.playlists ?? []);
     } catch {
       setExisting([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const build = async () => {
     setBuilding(true);
@@ -51,13 +57,18 @@ export function PlaylistsPage() {
   };
 
   const copy = async (url: string) => {
-    const full = url.startsWith("http") ? url : `${window.location.origin}${url}`;
+    const full = url.startsWith("http")
+      ? url
+      : `${window.location.origin}${url}`;
     await navigator.clipboard.writeText(full).catch(() => undefined);
   };
 
   return (
     <div>
-      <PageHeader title="Playlists" sub="Health-filtered M3U builder: dead, blocked and geo-walled entries stay out" />
+      <PageHeader
+        title="Playlists"
+        sub="Health-filtered M3U builder: dead, blocked and geo-walled entries stay out"
+      />
       <Card className="mb-4 grid gap-2 md:grid-cols-4">
         <input
           value={country}
@@ -93,6 +104,7 @@ export function PlaylistsPage() {
         </label>
       </Card>
       <button
+        type="button"
         onClick={build}
         disabled={building}
         data-testid="playlist-build"
@@ -100,15 +112,26 @@ export function PlaylistsPage() {
       >
         {building ? "Building…" : "Build playlist"}
       </button>
-      {error ? <Card className="mb-4 border-red-500/40 text-sm text-red-400">{error}</Card> : null}
+      {error ? (
+        <Card className="mb-4 border-red-500/40 text-sm text-red-400">
+          {error}
+        </Card>
+      ) : null}
       {result ? (
-        <Card className="mb-4 border-green-500/40" data-testid="playlist-result">
+        <Card
+          className="mb-4 border-green-500/40"
+          data-testid="playlist-result"
+        >
           <div className="text-sm">
-            Kept <strong>{result.stats.kept}</strong>, excluded <strong>{result.stats.excluded}</strong>
+            Kept <strong>{result.stats.kept}</strong>, excluded{" "}
+            <strong>{result.stats.excluded}</strong>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <code className="break-all text-xs text-amber-300">{result.playlist_url}</code>
+            <code className="break-all text-xs text-amber-300">
+              {result.playlist_url}
+            </code>
             <button
+              type="button"
               onClick={() => copy(result.playlist_url)}
               data-testid="playlist-copy"
               className="rounded-lg border border-input px-3 py-1 text-xs hover:bg-secondary"
@@ -117,7 +140,8 @@ export function PlaylistsPage() {
             </button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            VLC: Media → Open Network Stream → paste. Jellyfin: Dashboard → Live TV → M3U tuner → paste.
+            VLC: Media → Open Network Stream → paste. Jellyfin: Dashboard → Live
+            TV → M3U tuner → paste.
           </p>
         </Card>
       ) : null}
@@ -129,7 +153,10 @@ export function PlaylistsPage() {
       ) : (
         <div className="space-y-2">
           {existing.map((p) => (
-            <Card key={p.name} className="flex flex-wrap items-center gap-2 py-2.5">
+            <Card
+              key={p.name}
+              className="flex flex-wrap items-center gap-2 py-2.5"
+            >
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{p.name}</div>
                 <div className="text-xs text-muted-foreground">
@@ -138,6 +165,7 @@ export function PlaylistsPage() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => copy(p.url)}
                 data-testid={`playlist-copy-${p.name}`}
                 className="rounded-lg border border-input px-3 py-1 text-xs hover:bg-secondary"

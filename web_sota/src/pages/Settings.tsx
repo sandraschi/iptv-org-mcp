@@ -5,25 +5,33 @@ import { useLlm } from "@/store/llm";
 
 export function SettingsPage() {
   const llm = useLlm();
+  const llmProbe = useLlm((s) => s.probe);
+  const llmProbed = useLlm((s) => s.probed);
   const [health, setHealth] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!llm.probed) llm.probe();
+    if (!llmProbed) llmProbe();
     api("/api/health")
       .then((h) => setHealth(h as Record<string, unknown>))
       .catch((e) => setError(e instanceof Error ? e.message : "health failed"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [llmProbe, llmProbed]);
 
   return (
     <div>
       <PageHeader title="Settings" sub="Backend health + local LLM provider" />
-      {error ? <Card className="mb-4 border-red-500/40 text-sm text-red-400">{error}</Card> : null}
+      {error ? (
+        <Card className="mb-4 border-red-500/40 text-sm text-red-400">
+          {error}
+        </Card>
+      ) : null}
       <div className="grid gap-3 md:grid-cols-2">
         <Card>
           <h2 className="mb-2 font-semibold">Backend</h2>
-          <pre className="overflow-auto text-xs text-muted-foreground" data-testid="settings-health">
+          <pre
+            className="overflow-auto text-xs text-muted-foreground"
+            data-testid="settings-health"
+          >
             {health ? JSON.stringify(health, null, 2) : "probing…"}
           </pre>
           <div className="mt-2 text-xs text-muted-foreground">
@@ -32,7 +40,10 @@ export function SettingsPage() {
         </Card>
         <Card>
           <h2 className="mb-2 font-semibold">Local LLM</h2>
-          <label className="mb-1 block text-xs text-muted-foreground" htmlFor="llm-provider">
+          <label
+            className="mb-1 block text-xs text-muted-foreground"
+            htmlFor="llm-provider"
+          >
             Provider
           </label>
           <select
@@ -42,14 +53,19 @@ export function SettingsPage() {
             data-testid="llm-provider-select"
             className="mb-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
           >
-            {llm.providers.length === 0 ? <option value="">No local LLM detected</option> : null}
+            {llm.providers.length === 0 ? (
+              <option value="">No local LLM detected</option>
+            ) : null}
             {llm.providers.map((p) => (
               <option key={p.name} value={p.name}>
                 {p.name} (:{p.port}) · {p.models.length} models
               </option>
             ))}
           </select>
-          <label className="mb-1 block text-xs text-muted-foreground" htmlFor="llm-model">
+          <label
+            className="mb-1 block text-xs text-muted-foreground"
+            htmlFor="llm-model"
+          >
             Model
           </label>
           <select
@@ -68,7 +84,10 @@ export function SettingsPage() {
           </select>
           {llm.gpus.length > 1 ? (
             <>
-              <label className="mb-1 block text-xs text-muted-foreground" htmlFor="llm-gpu">
+              <label
+                className="mb-1 block text-xs text-muted-foreground"
+                htmlFor="llm-gpu"
+              >
                 Target GPU (primary stays free for resident models)
               </label>
               <select
@@ -87,6 +106,7 @@ export function SettingsPage() {
             </>
           ) : null}
           <button
+            type="button"
             onClick={() => llm.probe()}
             data-testid="llm-reprobe"
             className="mt-2 rounded-lg border border-input px-3 py-1.5 text-sm hover:bg-secondary"

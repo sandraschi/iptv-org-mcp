@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, EmptyState, PageHeader } from "@/components/AppLayout";
 import { api, type PlaylistInfo } from "@/lib/api";
 
@@ -8,29 +8,31 @@ export function InboxPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
-      const res = await api<{ success: boolean; data: { playlists: PlaylistInfo[] } }>(
-        "/api/playlists",
-      );
+      const res = await api<{
+        success: boolean;
+        data: { playlists: PlaylistInfo[] };
+      }>("/api/playlists");
       setPlaylists(res.data.playlists ?? []);
     } catch {
       setPlaylists([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const refresh = async () => {
     setRefreshing(true);
     setMessage("");
     try {
-      const res = await api<{ success: boolean; message: string; datasets: Record<string, number> }>(
-        "/api/iptv/refresh",
-        { method: "POST" },
-      );
+      const res = await api<{
+        success: boolean;
+        message: string;
+        datasets: Record<string, number>;
+      }>("/api/iptv/refresh", { method: "POST" });
       setDatasets(res.datasets);
       setMessage("Cache refreshed.");
     } catch (e) {
@@ -44,6 +46,7 @@ export function InboxPage() {
     <div>
       <PageHeader title="Inbox" sub="Freshness + freshly built artifacts">
         <button
+          type="button"
           onClick={refresh}
           disabled={refreshing}
           data-testid="inbox-refresh"
@@ -76,7 +79,8 @@ export function InboxPage() {
             <Card key={p.name} className="py-2.5 text-sm">
               <span className="font-medium">{p.name}</span>{" "}
               <span className="text-muted-foreground">
-                · {(p.size_bytes / 1024).toFixed(1)} KB · {new Date(p.modified * 1000).toLocaleString()}
+                · {(p.size_bytes / 1024).toFixed(1)} KB ·{" "}
+                {new Date(p.modified * 1000).toLocaleString()}
               </span>
             </Card>
           ))}

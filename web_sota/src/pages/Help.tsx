@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Card, PageHeader } from "@/components/AppLayout";
 
-const TABS = ["Start", "VLC", "Jellyfin", "API + ports", "Fix errors", "FAQ"] as const;
+const TABS = [
+  "Start",
+  "VLC",
+  "Jellyfin",
+  "API + ports",
+  "Fix errors",
+  "FAQ",
+] as const;
 
 const BODY: Record<(typeof TABS)[number], string[]> = {
   Start: [
@@ -53,11 +60,14 @@ export function HelpPage() {
       <div className="mb-3 flex flex-wrap gap-1.5">
         {TABS.map((t) => (
           <button
+            type="button"
             key={t}
             onClick={() => setTab(t)}
             data-testid={`help-tab-${t.replace(/[^a-z]+/gi, "-").toLowerCase()}`}
             className={`rounded-lg px-3 py-1.5 text-sm ${
-              tab === t ? "bg-amber-500 font-semibold text-black" : "border border-input hover:bg-secondary"
+              tab === t
+                ? "bg-amber-500 font-semibold text-black"
+                : "border border-input hover:bg-secondary"
             }`}
           >
             {t}
@@ -65,7 +75,10 @@ export function HelpPage() {
         ))}
       </div>
       <Card>
-        <ul className="list-disc space-y-1.5 pl-5 text-sm" data-testid="help-body">
+        <ul
+          className="list-disc space-y-1.5 pl-5 text-sm"
+          data-testid="help-body"
+        >
           {BODY[tab].map((line) => (
             <li key={line}>{line}</li>
           ))}
