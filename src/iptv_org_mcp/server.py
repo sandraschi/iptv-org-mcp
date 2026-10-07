@@ -101,6 +101,33 @@ async def api_logs(level: str | None = None, search: str | None = None, limit: i
     return {"success": True, "data": {"records": records, "count": len(records)}}
 
 
+@app.get("/", include_in_schema=False)
+async def api_root():
+    """Landing page: server info + useful links (browsers hit this first)."""
+    settings = get_settings()
+    return {
+        "server": "iptv-org MCP",
+        "version": "0.1.0",
+        "message": "use /api/health, /api/tools, or POST /mcp",
+        "links": {
+            "health": "/api/health",
+            "tools": "/api/tools",
+            "logs": "/api/logs",
+            "mcp": "/mcp",
+            "playlist_example": "/api/playlists/at.m3u",
+        },
+        "ports": {"backend": settings.port, "frontend": 11241},
+    }
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def api_favicon():
+    """Silence browser favicon noise with a 204."""
+    from fastapi import Response
+
+    return Response(status_code=204)
+
+
 app.mount("/", _mcp_http)
 
 
