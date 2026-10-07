@@ -1,0 +1,10 @@
+{
+  "name": "iptv-org-mcp",
+  "version": "0.1.0",
+  "description": "iptv-org MCP server - free linear TV discovery and health-filtered playlists",
+  "backend_port": 11242,
+  "frontend_port": 11241,
+  "transports": ["stdio", "streamable-http"],
+  "mcp_path": "/mcp",
+  "health_path": "/api/health"
+}
