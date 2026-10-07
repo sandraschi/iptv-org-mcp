@@ -8,23 +8,35 @@ export interface Gpu {
 
 const PREFERENCE = ["qwen3.8:27b", "gemma4:12b"];
 
-export function fitsTarget(model: string, gpus: Gpu[], targetIndex: number): boolean {
+export function fitsTarget(
+  model: string,
+  gpus: Gpu[],
+  targetIndex: number,
+): boolean {
   const gpu = gpus.find((g) => g.index === targetIndex);
   if (!gpu) return true;
   const lower = model.toLowerCase();
-  const wants27b = lower.includes("27b") || lower.includes("32b") || lower.includes("70b");
+  const wants27b =
+    lower.includes("27b") || lower.includes("32b") || lower.includes("70b");
   if (wants27b && gpu.vramMb < 20000) return false;
   return true;
 }
 
 /** Highest-preference model that is already loaded; else highest installed. */
-export function pickPreferredModel(loaded: string[], installed: string[]): string | null {
+export function pickPreferredModel(
+  loaded: string[],
+  installed: string[],
+): string | null {
   for (const pref of PREFERENCE) {
-    const hit = loaded.find((m) => m.toLowerCase().startsWith(pref.split(":")[0]));
+    const hit = loaded.find((m) =>
+      m.toLowerCase().startsWith(pref.split(":")[0]),
+    );
     if (hit) return hit;
   }
   for (const pref of PREFERENCE) {
-    const hit = installed.find((m) => m.toLowerCase().startsWith(pref.split(":")[0]));
+    const hit = installed.find((m) =>
+      m.toLowerCase().startsWith(pref.split(":")[0]),
+    );
     if (hit) return hit;
   }
   return loaded[0] ?? installed[0] ?? null;

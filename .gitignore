@@ -22,8 +22,8 @@ target/
 /gen/
 
 # Build output
-/dist/
-/build/
+dist/
+build/
 *.spec
 *.mcpb
 
@@ -54,7 +54,7 @@ Thumbs.db
 
 # Logs
 *.log
-/logs/
+logs/
 .coverage
 htmlcov/
 
