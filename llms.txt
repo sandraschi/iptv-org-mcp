@@ -1,0 +1,5 @@
+# iptv-org-mcp
+
+Curated free linear TV over the iptv-org static API. One tool (`iptv`), 12 operations:
+facets, search_channels, get_channel, search_streams, check_streams, build_playlist,
+get_epg, jellyfin_setup, play_in_vlc, status, refresh, help. Full docs: README.md, docs/TOOLS.md.
