@@ -1,6 +1,6 @@
 [project]
 name = "iptv-org-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "iptv-org MCP server - curated free linear TV: channel discovery, health-filtered M3U builder, EPG guide lookup, VLC + Jellyfin handoff"
 authors = [
     { name = "Sandra Schipal", email = "sandraschipal@gmail.com" },

@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
         yield
 
 
-app = FastAPI(lifespan=lifespan, title="iptv-org MCP", version="0.1.0")
+app = FastAPI(lifespan=lifespan, title="iptv-org MCP", version="0.2.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -67,7 +67,7 @@ async def api_health():
     return {
         "status": "ok",
         "server": "iptv-org MCP",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "uptime_seconds": int(time.time() - _START_TIME),
         "tool_count": len(await mcp.list_tools()),
     }
@@ -114,7 +114,7 @@ async def api_root():
     settings = get_settings()
     return {
         "server": "iptv-org MCP",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "message": "use /api/health, /api/tools, or POST /mcp",
         "links": {
             "health": "/api/health",

@@ -14,7 +14,7 @@ Upstream: https://github.com/iptv-org/iptv (playlists), /database (channels),
 no video is stored or proxied. Blocklist + NSFW flags are respected by default.
 """
 
-mcp = FastMCP("iptv-org-mcp", version="0.1.0", instructions=DESCRIPTION)
+mcp = FastMCP("iptv-org-mcp", version="0.2.0", instructions=DESCRIPTION)
 
 
 @mcp.resource("resource://iptv-org/legal")
