@@ -1,0 +1,49 @@
+# iptv-org-mcp - full reference
+
+Curated free linear TV over the iptv-org static API (https://github.com/iptv-org).
+No video stored or proxied. Upstream: Unlicense/CC0. This wrapper: MIT.
+
+## MCP
+
+One portmanteau tool `iptv(operation=...)`, 12 ops: help, status, refresh,
+facets, search_channels, get_channel, search_streams, check_streams,
+build_playlist, get_epg, jellyfin_setup, play_in_vlc.
+Transports: stdio (Claude Desktop) + streamable HTTP at POST /mcp.
+
+## REST (backend 11242, FastAPI)
+
+- GET / (landing), /api/health, /api/tools (with portmanteau drill-down), /api/logs
+- GET /api/playlists, /api/playlists/{name}.m3u (generated M3Us)
+- GET /api/skills, /api/skills/{name} (none shipped yet)
+- GET /api/iptv/facets, /api/iptv/search?q=&country=&category=
+- GET /api/iptv/playlist?country=AT&category=&probe=&max_entries=
+- GET /api/iptv/epg?channel_id=&query= ; POST /api/iptv/refresh
+- GET /api/llm/discover, /api/llm/ollama_state, /api/llm/gpus ; POST /api/llm/chat
+- Swagger /docs, ReDoc /redoc, schema /openapi.json
+
+## Webapp (frontend 11241, React 19 + Vite 6 + Tailwind, dark zinc/amber)
+
+Routes: /dashboard (hero + KPIs + CTA), /channels (search/filter/sort/paginate/count,
+grid-list toggle), /playlists (builder + copy URL + history), /guide (EPG lookup),
+/inbox (refresh + artifacts), /tools (dynamic + drill-down), /chat (local LLM,
+history in localStorage), /skills (empty state), /api-docs (swagger/redoc iframe),
+/logs (level + search), /settings (health + LLM provider/model/GPU), /help (6 tabs).
+State: zustand store/llm.ts (keys llm_provider/llm_model/llm_gpu), lib/provider.ts
+(resident-first pickPreferredModel, fitsTarget VRAM guard). testids on all controls.
+
+## Workflow
+
+facets -> search_channels -> build_playlist (probe=true for liveness) ->
+VLC (paste M3U URL) or Jellyfin Live TV (M3U tuner + XMLTV from get_epg/jellyfin_setup).
+
+## Config (env IPTV_ORG_MCP_)
+
+host, port 11242, api_base, playlist_base, cache_ttl_hours 24, cache_dir ./data,
+probe_timeout 8, probe_max 20, vlc_path. See docs/CONFIGURATION.md.
+
+## Fleet
+
+Ports 11241/11242 registered in WEBAPP_PORTS.md. Start: root start.ps1/start.bat,
+web_sota/start.ps1 (dual-mode, byte-copy of fleet template), starts mirror
+mcp-central-docs/starts/iptv-org-mcp-start.bat. CI: ruff + pytest (backend),
+tsc + biome (webapp).

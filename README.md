@@ -17,7 +17,17 @@ uv run pytest -q
 uv run python -m iptv_org_mcp --serve --port 11242
 ```
 
-Backend **11242**, frontend **11241** (planned). Health: `http://127.0.0.1:11242/api/health`.
+Frontend:
+
+```powershell
+cd web_sota
+npm install
+npm run dev
+```
+
+Or double-click `start.bat` (backend + frontend, ports 11242/11241).
+
+Backend **11242**, frontend **11241** (Vite dashboard: Channels, Playlists, EPG, Tools, Chat, Logs, Settings, Help). Health: `http://127.0.0.1:11242/api/health`.
 MCP: `http://127.0.0.1:11242/mcp` (streamable HTTP) or stdio for Claude Desktop.
 
 ## Claude Desktop
