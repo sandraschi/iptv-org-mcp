@@ -6,8 +6,9 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
@@ -76,13 +77,18 @@ async def api_health():
 async def api_tools():
     """Dynamic MCP tool list (never hardcoded)."""
     tool_list = await mcp.list_tools()
-    return {
-        "success": True,
-        "data": {
-            "tools": [{"name": t.name, "description": t.description} for t in tool_list],
-            "count": len(tool_list),
-        },
-    }
+    tools_out = []
+    for t in tool_list:
+        entry: dict = {"name": t.name, "description": t.description}
+        if t.name == "iptv":
+            try:
+                help_res = await _iptv_tool(operation="help")
+                entry["operations"] = help_res.get("operations", [])
+                entry["hint"] = help_res.get("hint", "")
+            except Exception:
+                entry["operations"] = []
+        tools_out.append(entry)
+    return {"success": True, "data": {"tools": tools_out, "count": len(tools_out)}}
 
 
 @app.get("/api/playlists/{name}")
@@ -155,6 +161,145 @@ async def api_iptv_epg(channel_id: str = "", query: str = ""):
 async def api_iptv_refresh():
     """Fetch fresh upstream snapshots (cold-cache warmup)."""
     return await _iptv_tool(operation="refresh")
+
+
+@app.get("/api/playlists")
+async def api_playlists():
+    """List generated M3U playlists (newest first)."""
+    d = Path(get_settings().cache_dir) / "playlists"
+    if not d.is_dir():
+        return {"success": True, "data": {"playlists": [], "count": 0}}
+    rows = []
+    for p in sorted(d.glob("*.m3u"), key=lambda x: x.stat().st_mtime, reverse=True):
+        rows.append(
+            {
+                "name": p.name,
+                "url": f"/api/playlists/{p.name}",
+                "size_bytes": p.stat().st_size,
+                "modified": p.stat().st_mtime,
+            }
+        )
+    return {"success": True, "data": {"playlists": rows, "count": len(rows)}}
+
+
+@app.get("/api/skills")
+async def api_skills():
+    """Skill list (empty: this server ships no SKILL.md yet)."""
+    return {"success": True, "data": {"skills": [], "count": 0}}
+
+
+@app.get("/api/skills/{skill_name}")
+async def api_skill_content(skill_name: str):
+    """Return a SKILL.md by name (404: none shipped yet)."""
+    raise HTTPException(status_code=404, detail=f"skill '{skill_name}' not found")
+
+
+_LLM_PROVIDERS: list[dict] = [
+    {"name": "ollama", "base": "http://127.0.0.1:11434", "models_path": "/api/tags"},
+    {"name": "lmstudio", "base": "http://127.0.0.1:1234", "models_path": "/v1/models"},
+    {"name": "vllm", "base": "http://127.0.0.1:8000", "models_path": "/v1/models"},
+]
+
+
+@app.get("/api/llm/discover")
+async def api_llm_discover():
+    """Probe local LLM providers (Ollama / LM Studio / vLLM) for Settings + Chat."""
+    discovered = []
+    async with httpx.AsyncClient(timeout=3) as client:
+        for provider in _LLM_PROVIDERS:
+            try:
+                r = await client.get(provider["base"] + provider["models_path"])
+                if r.status_code != 200:
+                    continue
+                payload = r.json()
+                if provider["name"] == "ollama":
+                    models = [m["name"] for m in payload.get("models", []) if isinstance(m, dict)]
+                else:
+                    models = [m["id"] for m in payload.get("data", []) if isinstance(m, dict)]
+                discovered.append(
+                    {
+                        "name": provider["name"],
+                        "base": provider["base"],
+                        "port": int(provider["base"].rsplit(":", 1)[1]),
+                        "models": models[:50],
+                    }
+                )
+            except Exception:
+                continue
+    return {"success": True, "data": {"providers": discovered, "count": len(discovered)}}
+
+
+@app.get("/api/llm/ollama_state")
+async def api_llm_ollama_state():
+    """Ollama resident-first state: loaded models (/api/ps) + installed (/api/tags)."""
+    base = "http://127.0.0.1:11434"
+    loaded: list[str] = []
+    installed: list[str] = []
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            ps = await client.get(base + "/api/ps")
+            if ps.status_code == 200:
+                loaded = [m["name"] for m in ps.json().get("models", []) if isinstance(m, dict)]
+            tags = await client.get(base + "/api/tags")
+            if tags.status_code == 200:
+                installed = [m["name"] for m in tags.json().get("models", []) if isinstance(m, dict)]
+    except Exception:
+        pass
+    return {"success": True, "data": {"loaded": loaded, "installed": installed}}
+
+
+@app.get("/api/llm/gpus")
+async def api_llm_gpus():
+    """Enumerate NVIDIA GPUs via nvidia-smi (empty on non-NVIDIA)."""
+    import asyncio as _asyncio
+
+    gpus: list[dict] = []
+    try:
+        proc = await _asyncio.create_subprocess_exec(
+            "nvidia-smi",
+            "--query-gpu=index,name,memory.total",
+            "--format=csv,noheader,nounits",
+            stdout=_asyncio.subprocess.PIPE,
+            stderr=_asyncio.subprocess.DEVNULL,
+        )
+        out, _ = await _asyncio.wait_for(proc.communicate(), timeout=5)
+        for line in out.decode().strip().splitlines():
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) == 3:
+                gpus.append({"index": int(parts[0]), "name": parts[1], "vramMb": int(float(parts[2]))})
+    except Exception:
+        pass
+    return {"success": True, "data": {"gpus": gpus, "count": len(gpus)}}
+
+
+@app.post("/api/llm/chat")
+async def api_llm_chat(body: dict):
+    """Proxy chat completions to a local provider (never expose keys; none needed).
+
+    Body: {provider, model, messages, base?}. Only loopback bases allowed.
+    """
+    provider = (body.get("provider") or "ollama").lower()
+    model = body.get("model", "")
+    messages = body.get("messages", [])
+    bases = {
+        "ollama": "http://127.0.0.1:11434",
+        "lmstudio": "http://127.0.0.1:1234",
+        "vllm": "http://127.0.0.1:8000",
+    }
+    base = body.get("base") or bases.get(provider, bases["ollama"])
+    if not base.startswith(("http://127.0.0.1:", "http://localhost:")):
+        return _error_response("only loopback LLM bases are allowed", "forbidden")
+    try:
+        async with httpx.AsyncClient(timeout=180) as client:
+            r = await client.post(
+                f"{base}/v1/chat/completions",
+                json={"model": model, "messages": messages, "stream": False},
+            )
+    except Exception as exc:
+        return _error_response(f"LLM backend unreachable at {base}: {exc}", "llm_down")
+    if r.status_code != 200:
+        return _error_response(f"LLM backend returned {r.status_code}: {r.text[:200]}", "llm_error")
+    return {"success": True, "data": r.json()}
 
 
 @app.get("/favicon.ico", include_in_schema=False)
