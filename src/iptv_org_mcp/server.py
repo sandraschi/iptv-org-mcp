@@ -16,6 +16,7 @@ from iptv_org_mcp._mcp import mcp
 from iptv_org_mcp.config import get_settings
 from iptv_org_mcp.errors import _error_response
 from iptv_org_mcp.logging_ring import get_ring_handler, install_ring_handler
+from iptv_org_mcp.tools.iptv_tools import iptv as _iptv_tool
 
 logger = logging.getLogger("iptv-org-mcp")
 _START_TIME = time.time()
@@ -118,6 +119,42 @@ async def api_root():
         },
         "ports": {"backend": settings.port, "frontend": 11241},
     }
+
+
+@app.get("/api/iptv/facets")
+async def api_iptv_facets():
+    """Browser-friendly alias for iptv(operation='facets')."""
+    return await _iptv_tool(operation="facets")
+
+
+@app.get("/api/iptv/search")
+async def api_iptv_search(query: str = "", country: str = "", category: str = ""):
+    """Browser-friendly alias for iptv(operation='search_channels')."""
+    return await _iptv_tool(operation="search_channels", query=query, country=country, category=category)
+
+
+@app.get("/api/iptv/playlist")
+async def api_iptv_playlist(country: str = "", category: str = "", probe: bool = False, max_entries: int = 200):
+    """Browser-friendly alias for iptv(operation='build_playlist')."""
+    return await _iptv_tool(
+        operation="build_playlist",
+        country=country,
+        category=category,
+        probe=probe,
+        max_entries=max_entries,
+    )
+
+
+@app.get("/api/iptv/epg")
+async def api_iptv_epg(channel_id: str = "", query: str = ""):
+    """Browser-friendly alias for iptv(operation='get_epg')."""
+    return await _iptv_tool(operation="get_epg", channel_id=channel_id, query=query)
+
+
+@app.post("/api/iptv/refresh")
+async def api_iptv_refresh():
+    """Fetch fresh upstream snapshots (cold-cache warmup)."""
+    return await _iptv_tool(operation="refresh")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
