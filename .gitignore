@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Node / webapp
+node_modules/
+**/node_modules/
+.next/
+*.tsbuildinfo
+
+# Rust / Tauri (fleet mandatory even for Python-only: Zed rust-analyzer)
+target/
+/native/target/
+/web_sota/src-tauri/target/
+/gen/
+
+# Build output
+/dist/
+/build/
+*.spec
+*.mcpb
+
+# MCPB pack staging (exact copy of src/, never commit)
+/mcpb/src/
+/mcpb/
+
+# Data / DB
+/data/
+*.db
+*.db-shm
+*.db-wal
+.cache/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+/logs/
+.coverage
+htmlcov/
+
+# Fleet backup artifacts (both patterns required)
+*.bak
+*.bak.*
