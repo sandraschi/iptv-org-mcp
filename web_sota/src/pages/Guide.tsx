@@ -14,9 +14,11 @@ export function GuidePage() {
     setError("");
     try {
       const params = new URLSearchParams({ channel_id: channelId, query });
-      const res = await api<{ success: boolean; message: string; guides: Guide[] }>(
-        `/api/iptv/epg?${params}`,
-      );
+      const res = await api<{
+        success: boolean;
+        message: string;
+        guides: Guide[];
+      }>(`/api/iptv/epg?${params}`);
       setRows(res.guides ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "lookup failed");
@@ -28,8 +30,12 @@ export function GuidePage() {
 
   return (
     <div>
-      <PageHeader title="EPG Guide" sub="Find XMLTV sources per channel for Jellyfin">
+      <PageHeader
+        title="EPG Guide"
+        sub="Find XMLTV sources per channel for Jellyfin"
+      >
         <button
+          type="button"
           onClick={run}
           disabled={loading}
           data-testid="guide-search-btn"
@@ -56,18 +62,31 @@ export function GuidePage() {
           className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
         />
       </Card>
-      {error ? <Card className="mb-4 border-red-500/40 text-sm text-red-400">{error}</Card> : null}
+      {error ? (
+        <Card className="mb-4 border-red-500/40 text-sm text-red-400">
+          {error}
+        </Card>
+      ) : null}
       {rows.length === 0 && !loading ? (
         <EmptyState text="No guides yet. Not every feed has EPG data — look up a channel id first." />
       ) : null}
       <div className="space-y-2">
-        {rows.map((g, i) => (
-          <Card key={`${g.channel}-${i}`} className="py-2.5">
+        {rows.map((g) => (
+          <Card
+            key={`${g.channel}-${g.site_name ?? g.site ?? ""}-${(g.sources?.[0]?.url ?? "").slice(-32)}`}
+            className="py-2.5"
+          >
             <div className="text-sm font-medium">
-              {g.channel} <span className="text-muted-foreground">· {g.site_name ?? g.site}</span>
+              {g.channel}{" "}
+              <span className="text-muted-foreground">
+                · {g.site_name ?? g.site}
+              </span>
             </div>
             {(g.sources ?? []).map((s) => (
-              <code key={s.url} className="mt-1 block break-all text-xs text-amber-300">
+              <code
+                key={s.url}
+                className="mt-1 block break-all text-xs text-amber-300"
+              >
                 {s.url}
               </code>
             ))}

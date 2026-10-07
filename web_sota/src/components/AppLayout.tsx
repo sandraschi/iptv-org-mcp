@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   BookOpen,
   Boxes,
@@ -16,6 +14,8 @@ import {
   Tv,
   Wrench,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { cn } from "@/lib/cn";
 
 const NAV = [
@@ -33,22 +33,51 @@ const NAV = [
   { to: "/help", label: "Help", icon: CircleHelp },
 ];
 
-export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("glass rounded-xl p-4", className)}>{children}</div>;
+export function Card({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn("glass rounded-xl p-4", className)}>{children}</div>
+  );
 }
 
-export function Stat({ label, value, testid }: { label: string; value: string; testid: string }) {
+export function Stat({
+  label,
+  value,
+  testid,
+}: {
+  label: string;
+  value: string;
+  testid: string;
+}) {
   return (
     <Card>
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-amber-400" data-testid={testid}>
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div
+        className="mt-1 text-2xl font-semibold text-amber-400"
+        data-testid={testid}
+      >
         {value}
       </div>
     </Card>
   );
 }
 
-export function PageHeader({ title, sub, children }: { title: string; sub?: string; children?: React.ReactNode }) {
+export function PageHeader({
+  title,
+  sub,
+  children,
+}: {
+  title: string;
+  sub?: string;
+  children?: React.ReactNode;
+}) {
   return (
     <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
       <div>
@@ -61,11 +90,15 @@ export function PageHeader({ title, sub, children }: { title: string; sub?: stri
 }
 
 export function EmptyState({ text }: { text: string }) {
-  return <Card className="text-center text-sm text-muted-foreground">{text}</Card>;
+  return (
+    <Card className="text-center text-sm text-muted-foreground">{text}</Card>
+  );
 }
 
 export function AppLayout() {
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("nav_collapsed") === "1");
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("nav_collapsed") === "1",
+  );
   const [health, setHealth] = useState<"ok" | "down" | "probing">("probing");
   const location = useLocation();
 
@@ -81,7 +114,7 @@ export function AppLayout() {
     return () => {
       cancelled = true;
     };
-  }, [location.pathname]);
+  }, []);
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -106,12 +139,17 @@ export function AppLayout() {
             </Link>
           )}
           <button
+            type="button"
             onClick={toggle}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             data-testid="nav-collapse"
             className="rounded-md p-1.5 hover:bg-secondary"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </button>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-2">
@@ -144,19 +182,30 @@ export function AppLayout() {
               health === "probing" && "animate-pulse bg-amber-400",
             )}
           />
-          {!collapsed && <span className="text-muted-foreground">:11242 {health}</span>}
+          {!collapsed && (
+            <span className="text-muted-foreground">:11242 {health}</span>
+          )}
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-background/80 px-4 py-2.5 backdrop-blur-xl">
           <div className="text-sm font-medium">
-            {NAV.find((n) => n.to === location.pathname)?.label ?? "iptv-org-mcp"}
+            {NAV.find((n) => n.to === location.pathname)?.label ??
+              "iptv-org-mcp"}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Link to="/help" data-testid="topbar-help" className="rounded-md px-2 py-1 hover:bg-secondary">
+            <Link
+              to="/help"
+              data-testid="topbar-help"
+              className="rounded-md px-2 py-1 hover:bg-secondary"
+            >
               Help
             </Link>
-            <Link to="/logs" data-testid="topbar-logs" className="rounded-md px-2 py-1 hover:bg-secondary">
+            <Link
+              to="/logs"
+              data-testid="topbar-logs"
+              className="rounded-md px-2 py-1 hover:bg-secondary"
+            >
               Logs
             </Link>
           </div>

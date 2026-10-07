@@ -13,7 +13,11 @@ const HISTORY_KEY = "iptv_chat_history";
 const SYSTEM = `You are the iptv-org-mcp assistant. Help with free linear TV: finding channels by country/category, building health-filtered M3U playlists, EPG lookups, VLC playback and Jellyfin Live TV import. Upstream stores no video, only public links. Never promise a stream is alive; suggest probing. Keep answers short.`;
 
 export function ChatPage() {
-  const { selectedProvider, selectedModel, availableModels, probed, probe } = useLlm();
+  const selectedProvider = useLlm((s) => s.selectedProvider);
+  const selectedModel = useLlm((s) => s.selectedModel);
+  const availableModels = useLlm((s) => s.availableModels);
+  const probed = useLlm((s) => s.probed);
+  const probe = useLlm((s) => s.probe);
   const [messages, setMessages] = useState<Msg[]>(() => {
     try {
       return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]") as Msg[];
@@ -37,7 +41,9 @@ export function ChatPage() {
     const text = input.trim();
     if (!text || sending) return;
     if (!selectedProvider || !selectedModel) {
-      setError("No local LLM selected. Start Ollama or LM Studio, then re-probe in Settings.");
+      setError(
+        "No local LLM selected. Start Ollama or LM Studio, then re-probe in Settings.",
+      );
       return;
     }
     setError("");
@@ -46,18 +52,19 @@ export function ChatPage() {
     setInput("");
     setSending(true);
     try {
-      const res = await api<{ success: boolean; message?: string; data: { choices: { message: { content: string } }[] } }>(
-        "/api/llm/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            provider: selectedProvider,
-            model: selectedModel,
-            messages: [{ role: "system", content: SYSTEM }, ...next],
-          }),
-        },
-      );
+      const res = await api<{
+        success: boolean;
+        message?: string;
+        data: { choices: { message: { content: string } }[] };
+      }>("/api/llm/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: selectedProvider,
+          model: selectedModel,
+          messages: [{ role: "system", content: SYSTEM }, ...next],
+        }),
+      });
       if (!res.success) throw new Error(res.message ?? "chat failed");
       const reply = res.data.choices[0]?.message?.content ?? "(empty reply)";
       setMessages([...next, { role: "assistant", content: reply }]);
@@ -75,6 +82,7 @@ export function ChatPage() {
         sub={`${selectedProvider || "no provider"} · ${selectedModel || "no model"} · ${availableModels.length} models`}
       >
         <button
+          type="button"
           onClick={() => {
             setMessages([]);
             localStorage.removeItem(HISTORY_KEY);
@@ -85,14 +93,25 @@ export function ChatPage() {
           Clear
         </button>
       </PageHeader>
-      {error ? <Card className="mb-4 border-red-500/40 text-sm text-red-400">{error}</Card> : null}
+      {error ? (
+        <Card className="mb-4 border-red-500/40 text-sm text-red-400">
+          {error}
+        </Card>
+      ) : null}
       {messages.length === 0 ? (
         <EmptyState text="Ask about channels, playlists, EPG or Jellyfin import. History persists locally." />
       ) : (
         <div className="mb-4 space-y-2" data-testid="chat-messages">
-          {messages.map((m, i) => (
-            <Card key={i} className={m.role === "user" ? "ml-8" : "mr-8 border-amber-500/20"}>
-              <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">{m.role}</div>
+          {messages.map((m) => (
+            <Card
+              key={`${m.role}-${m.content.length}-${m.content.slice(0, 24)}`}
+              className={
+                m.role === "user" ? "ml-8" : "mr-8 border-amber-500/20"
+              }
+            >
+              <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+                {m.role}
+              </div>
               <div className="whitespace-pre-wrap text-sm">{m.content}</div>
             </Card>
           ))}
@@ -108,6 +127,7 @@ export function ChatPage() {
           className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm"
         />
         <button
+          type="button"
           onClick={send}
           disabled={sending}
           data-testid="chat-send"

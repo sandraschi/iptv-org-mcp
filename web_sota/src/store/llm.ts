@@ -37,12 +37,15 @@ export const useLlm = create<LlmState>((set, get) => ({
   loadedModels: [],
   probed: false,
   probe: async () => {
-    set({ status: { ollama: "probing", lmstudio: "probing", vllm: "probing" } });
+    set({
+      status: { ollama: "probing", lmstudio: "probing", vllm: "probing" },
+    });
     let providers: ProviderState[] = [];
     try {
-      const res = await api<{ success: boolean; data: { providers: ProviderState[] } }>(
-        "/api/llm/discover",
-      );
+      const res = await api<{
+        success: boolean;
+        data: { providers: ProviderState[] };
+      }>("/api/llm/discover");
       providers = res.data.providers;
     } catch {
       providers = [];
@@ -56,7 +59,9 @@ export const useLlm = create<LlmState>((set, get) => ({
 
     let gpus: Gpu[] = [];
     try {
-      const g = await api<{ success: boolean; data: { gpus: Gpu[] } }>("/api/llm/gpus");
+      const g = await api<{ success: boolean; data: { gpus: Gpu[] } }>(
+        "/api/llm/gpus",
+      );
       gpus = g.data.gpus;
     } catch {
       gpus = [];
@@ -72,9 +77,10 @@ export const useLlm = create<LlmState>((set, get) => ({
     let loaded: string[] = [];
     let installed: string[] = [];
     try {
-      const s = await api<{ success: boolean; data: { loaded: string[]; installed: string[] } }>(
-        "/api/llm/ollama_state",
-      );
+      const s = await api<{
+        success: boolean;
+        data: { loaded: string[]; installed: string[] };
+      }>("/api/llm/ollama_state");
       loaded = s.data.loaded;
       installed = s.data.installed;
     } catch {
@@ -115,7 +121,11 @@ export const useLlm = create<LlmState>((set, get) => ({
     const p = get().providers.find((x) => x.name === name);
     localStorage.setItem("llm_provider", name);
     localStorage.setItem("llm_model", p?.models[0] ?? "");
-    set({ selectedProvider: name, selectedModel: p?.models[0] ?? "", availableModels: p?.models ?? [] });
+    set({
+      selectedProvider: name,
+      selectedModel: p?.models[0] ?? "",
+      availableModels: p?.models ?? [],
+    });
   },
   setModel: (model) => {
     localStorage.setItem("llm_model", model);
