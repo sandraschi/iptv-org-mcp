@@ -31,6 +31,7 @@ build/
 # NOTE: only mcpb/src/ and the generated mcpb/.mcpbignore are ignored -
 # mcpb/manifest.json and mcpb/pyproject.toml ARE committed (pack inputs).
 /mcpb/src/
+mcpb/assets/prompts/
 mcpb/.mcpbignore
 
 # Data / DB
