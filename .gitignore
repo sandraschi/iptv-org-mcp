@@ -28,8 +28,10 @@ build/
 *.mcpb
 
 # MCPB pack staging (exact copy of src/, never commit)
+# NOTE: only mcpb/src/ and the generated mcpb/.mcpbignore are ignored -
+# mcpb/manifest.json and mcpb/pyproject.toml ARE committed (pack inputs).
 /mcpb/src/
-/mcpb/
+mcpb/.mcpbignore
 
 # Data / DB
 /data/

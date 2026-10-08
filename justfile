@@ -25,4 +25,4 @@ ci:
     just test
 
 mcpb-pack:
-    powershell -NoProfile -File scripts/pack-mcpb.ps1
+    powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mcpb-pack.ps1
