@@ -484,4 +484,5 @@ Start tonight with one build: your country, news, no probe. Paste it,
 zap through it, and notice how short the dead list has become. That
 single playlist is the whole product - everything else here is its
 care and feeding, and the assistant exists to repeat this evening
-forever without surprises. Enjoy the zapper again.
+forever without surprises. Enjoy the zapper again. Channels change, guides
+update, players evolve; curated links plus honest stats stay useful regardless.
