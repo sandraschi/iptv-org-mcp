@@ -72,3 +72,17 @@ MCP: `http://127.0.0.1:11242/mcp` (streamable HTTP) or stdio for Claude Desktop.
 
 Only public links. `blocklist.json` (dmca/nsfw) enforced. See `resource://iptv-org/legal`.
 MIT (this wrapper). Upstream: Unlicense/CC0.
+
+## Distribution (.mcpb bundle)
+
+`just mcpb-pack` runs the fleet pack pipeline (wipe+recopy, import/AST/
+pollution checks, 3-4-100 prompt gate, pack, launch-from-clean-unpack
+proof) and writes `dist/`:
+
+* `iptv-org-mcp-v0.2.0.mcpb` - versioned archive
+* `iptv-org-mcp.mcpb` - stable name for `releases/latest/download/`
+* `install.ps1` - Claude Desktop one-liner installer (generated, SHA256-pinned)
+
+Attach all three to the GitHub release when `sandraschi/iptv-org-mcp`
+goes public; until then the one-liner stays dormant and local installs
+use the file directly.
