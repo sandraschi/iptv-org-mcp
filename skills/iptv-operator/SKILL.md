@@ -41,3 +41,37 @@ video, only public stream links. This server never proxies video.
 - Black in VLC: "dead or geo-blocked — rebuild with probe=true or pick
   another feed for the same channel."
 - No EPG: "no guide rows upstream for that channel."
+
+## For agents (tool call shapes, copy as-is)
+
+Evening news build:
+`facets` -> `search_channels` {query: "", country: "AT", category: "news"}
+-> `build_playlist` {country: "AT", category: "news"} -> read back
+playlist_url plus kept/excluded -> hand over the VLC paste path.
+
+Match-night verified build:
+`search_streams` {query: "<sport>"} -> `check_streams` {query: "<sport>"}
+-> `build_playlist` {country: "<CC>", category: "sports", probe: true}
+-> quote alive/total, then the playlist URL. Probe takes tens of
+seconds; say so before calling it.
+
+Jellyfin import:
+`jellyfin_setup` {country: "<CC>"} -> read tuner URL, each EPG source
+URL and the five steps in order -> add the jellyfin-mcp guide check.
+If `get_epg` shows no rows, set now-and-next expectations first.
+
+## For humans (what to ask for)
+
+Ask by outcome, not operation: "Austrian news for tonight", "UK sports
+that actually play", "record German news in Jellyfin". The assistant
+picks the calls. Name a country when it matters; say "probed" when it
+must work; say "Jellyfin" when recordings are wanted. Expect kept and
+excluded numbers with every playlist and alive and total with every
+probe — numbers missing means the step was skipped, ask for it.
+
+## Tool catalog (real names, all twelve)
+
+help, status, refresh, facets, search_channels, get_channel,
+search_streams, check_streams, build_playlist, get_epg, jellyfin_setup,
+play_in_vlc. No other operations exist; any other name in an answer is
+a hallucination — re-check with help.
