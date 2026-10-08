@@ -1,0 +1,25 @@
+{
+  "manifest_version": "0.2",
+  "name": "iptv-org-mcp",
+  "version": "0.2.0",
+  "description": "Curated free linear TV: iptv-org channel discovery, health-filtered M3U playlists, EPG lookup, VLC + Jellyfin handoff",
+  "author": { "name": "Sandra Schipal" },
+  "server": {
+    "type": "python",
+    "entry_point": "src/iptv_org_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "iptv_org_mcp"],
+      "env": {
+        "PYTHONPATH": "${__dirname}/src",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "iptv",
+      "description": "Curated iptv-org discovery: search channels/streams, build health-filtered M3U playlists, EPG lookup, VLC play, Jellyfin Live TV setup"
+    }
+  ]
+}
