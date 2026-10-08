@@ -5,7 +5,8 @@ param(
     [switch]$BackendOnly,
     [switch]$FrontendOnly,
     [switch]$NoBrowser,
-    [switch]$ReuseIfRunning
+    [switch]$ReuseIfRunning,
+    [switch]$RestartBackend
 )
 
 $ErrorActionPreference = 'Stop'
