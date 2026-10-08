@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -368,6 +369,23 @@ async def _run_stdio():
     await mcp.run_stdio_async()
 
 
+def resolve_runtime(mode_arg: str, port_arg: int) -> tuple[str, int]:
+    """Resolve (mode, port): MCP_TRANSPORT/MCP_PORT env wins (bundle/CI use).
+
+    Claude Desktop bundles and the fleet pack check launch with
+    ``MCP_TRANSPORT=http MCP_PORT=<probe>``; honor them so the same entry
+    point serves stdio locally and HTTP in a bundle.
+    """
+    mode = mode_arg
+    if os.environ.get("MCP_TRANSPORT", "").lower() == "http":
+        mode = "http"
+    try:
+        port = int(os.environ.get("MCP_PORT", str(port_arg)))
+    except ValueError:
+        port = port_arg
+    return mode, port
+
+
 def main():
     """CLI entry: stdio (default), http, or dual."""
     import argparse
@@ -379,12 +397,13 @@ def main():
     parser.add_argument("--serve", action="store_true", help="Alias for --mode dual")
     args = parser.parse_args()
     mode = "dual" if args.serve else args.mode
+    mode, port = resolve_runtime(mode, args.port)
     if mode == "stdio":
         asyncio.run(_run_stdio())
     else:
         logging.basicConfig(level=get_settings().log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-        logger.info("Starting iptv-org MCP on %s:%s (mode=%s)", args.host, args.port, mode)
-        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+        logger.info("Starting iptv-org MCP on %s:%s (mode=%s)", args.host, port, mode)
+        uvicorn.run(app, host=args.host, port=port, log_level="info")
 
 
 if __name__ == "__main__":
