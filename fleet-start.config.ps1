@@ -11,6 +11,9 @@
         Kind          = 'uvicorn'
         UvicornTarget = 'iptv_org_mcp.server:app'
         SyncExtras    = @('dev')
+        # Fresh code on every start: uvicorn --reload watches src/ and
+        # restarts the backend whenever edited files change.
+        Reload        = $true
         Env           = @{ WEB_PORT = '11242' }
     }
     Frontend = @{
