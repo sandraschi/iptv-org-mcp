@@ -27,8 +27,9 @@ _mcp_http = mcp.http_app(path=_MCP_PATH)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: install log ring, report config (no network on boot)."""
+    """Startup: log level + ring handler, report config (no network on boot)."""
     install_ring_handler()
+    logging.getLogger().setLevel(get_settings().log_level)
     settings = get_settings()
     logger.info("iptv-org MCP startup - backend=%s api=%s", settings.port, settings.api_base)
     async with _mcp_http.lifespan(app):
@@ -157,6 +158,22 @@ async def api_iptv_epg(channel_id: str = "", query: str = ""):
     return await _iptv_tool(operation="get_epg", channel_id=channel_id, query=query)
 
 
+@app.get("/api/iptv/channel")
+async def api_iptv_channel(channel_id: str = ""):
+    """Channel detail: feeds + playable streams + guides."""
+    return await _iptv_tool(operation="get_channel", channel_id=channel_id)
+
+
+@app.post("/api/iptv/play")
+async def api_iptv_play(body: dict):
+    """Launch local VLC with a channel's stream (server machine only)."""
+    return await _iptv_tool(
+        operation="play_in_vlc",
+        channel_id=str(body.get("channel_id", "")),
+        stream_url=str(body.get("stream_url", "")),
+    )
+
+
 @app.post("/api/iptv/refresh")
 async def api_iptv_refresh():
     """Fetch fresh upstream snapshots (cold-cache warmup)."""
@@ -184,14 +201,48 @@ async def api_playlists():
 
 @app.get("/api/skills")
 async def api_skills():
-    """Skill list (empty: this server ships no SKILL.md yet)."""
-    return {"success": True, "data": {"skills": [], "count": 0}}
+    """Skill list from skills/*/SKILL.md (name + description)."""
+    out = []
+    skills_dir = Path(__file__).resolve().parent.parent.parent / "skills"
+    if skills_dir.is_dir():
+        for md in sorted(skills_dir.glob("*/SKILL.md")):
+            meta = _parse_skill_md(md)
+            out.append({"name": md.parent.name, "uri": f"skill://{md.parent.name}", **meta})
+    return {"success": True, "data": {"skills": out, "count": len(out)}}
+
+
+def _parse_skill_md(path: Path) -> dict:
+    """Extract name/description from SKILL.md frontmatter (best-effort)."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    if not text.startswith("---"):
+        return {}
+    head = text.split("---", 2)
+    if len(head) < 3:
+        return {}
+    meta: dict[str, str] = {}
+    for line in head[1].splitlines():
+        if ":" in line:
+            k, v = line.split(":", 1)
+            meta[k.strip()] = v.strip()
+    return {k: meta[k] for k in ("name", "description") if k in meta}
 
 
 @app.get("/api/skills/{skill_name}")
 async def api_skill_content(skill_name: str):
-    """Return a SKILL.md by name (404: none shipped yet)."""
-    raise HTTPException(status_code=404, detail=f"skill '{skill_name}' not found")
+    """Return a SKILL.md body by directory name."""
+    if not skill_name.replace("-", "").replace("_", "").isalnum():
+        raise HTTPException(status_code=400, detail="invalid skill name")
+    path = Path(__file__).resolve().parent.parent.parent / "skills" / skill_name / "SKILL.md"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail=f"skill '{skill_name}' not found")
+    meta = _parse_skill_md(path)
+    return {
+        "success": True,
+        "data": {"name": skill_name, "content": path.read_text(encoding="utf-8"), **meta},
+    }
 
 
 _LLM_PROVIDERS: list[dict] = [
