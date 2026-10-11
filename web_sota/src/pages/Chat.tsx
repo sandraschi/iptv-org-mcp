@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, EmptyState, PageHeader } from "@/components/AppLayout";
 import { api } from "@/lib/api";
-import { useLlm } from "@/store/llm";
 
 interface Msg {
   role: "user" | "assistant";
@@ -9,15 +8,56 @@ interface Msg {
 }
 
 const HISTORY_KEY = "iptv_chat_history";
+const PERSONALITY_KEY = "iptv_chat_personality";
+const HISTORY_CAP = 100;
 
-const SYSTEM = `You are the iptv-org-mcp assistant. Help with free linear TV: finding channels by country/category, building health-filtered M3U playlists, EPG lookups, VLC playback and Jellyfin Live TV import. Upstream stores no video, only public links. Never promise a stream is alive; suggest probing. Keep answers short.`;
+const FALLBACK_SYSTEM =
+  "You are the iptv-org-mcp assistant. Help with free linear TV: finding channels by country/category, building health-filtered M3U playlists, EPG lookups, VLC playback and Jellyfin Live TV import. Upstream stores no video, only public links. Never promise a stream is alive; suggest probing. Keep answers short.";
+
+const PERSONALITIES = [
+  {
+    id: "concise",
+    label: "Concise",
+    system:
+      "Answer in the fewest words that still quote kept/excluded or alive/total numbers.",
+  },
+  {
+    id: "planner",
+    label: "Evening planner",
+    system:
+      "Plan tonight's viewing: ask country + category when missing, then walk facets, search, build_playlist in order.",
+  },
+  {
+    id: "jellyfin",
+    label: "Jellyfin importer",
+    system:
+      "Guide Jellyfin Live TV imports step by step: tuner URL, XMLTV sources, mapping, guide refresh. Warn when a channel has no EPG rows.",
+  },
+  {
+    id: "debug",
+    label: "Stream doctor",
+    system:
+      "Diagnose dead or black streams: check_streams first, then propose a probed rebuild or another feed for the same channel.",
+  },
+] as const;
+
+const EXAMPLES = [
+  "Austrian news for tonight",
+  "UK sports that actually play",
+  "Build a German news playlist for VLC",
+  "Why is my stream black in VLC?",
+  "Import German channels into Jellyfin",
+  "Which EPG guides exist for ORF1.at?",
+];
 
 export function ChatPage() {
-  const selectedProvider = useLlm((s) => s.selectedProvider);
-  const selectedModel = useLlm((s) => s.selectedModel);
-  const availableModels = useLlm((s) => s.availableModels);
-  const probed = useLlm((s) => s.probed);
-  const probe = useLlm((s) => s.probe);
+  const [provider, setProvider] = useState("");
+  const [model, setModel] = useState("");
+  const [modelCount, setModelCount] = useState(0);
+  const [personality, setPersonality] = useState(
+    () => localStorage.getItem(PERSONALITY_KEY) ?? "concise",
+  );
+  const [skill, setSkill] = useState("");
   const [messages, setMessages] = useState<Msg[]>(() => {
     try {
       return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]") as Msg[];
@@ -30,17 +70,64 @@ export function ChatPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!probed) probe();
-  }, [probed, probe]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await api<{ success: boolean; data: { content: string } }>(
+          "/api/skills/iptv-operator",
+        );
+        if (!cancelled) setSkill(s.data.content ?? "");
+      } catch {
+        if (!cancelled) setSkill("");
+      }
+      try {
+        const d = await api<{
+          success: boolean;
+          data: { providers: { name: string; models: string[] }[] };
+        }>("/api/llm/discover");
+        if (cancelled) return;
+        const savedP = localStorage.getItem("llm_provider") ?? "";
+        const savedM = localStorage.getItem("llm_model") ?? "";
+        const hit =
+          d.data.providers.find((p) => p.name === savedP) ??
+          d.data.providers[0];
+        setProvider(hit?.name ?? "");
+        setModel((savedM || hit?.models[0]) ?? "");
+        setModelCount(hit?.models.length ?? 0);
+      } catch {
+        if (!cancelled) {
+          setProvider(localStorage.getItem("llm_provider") ?? "");
+          setModel(localStorage.getItem("llm_model") ?? "");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-50)));
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(messages.slice(-HISTORY_CAP)),
+    );
   }, [messages]);
+
+  const pickPersonality = (id: string) => {
+    setPersonality(id);
+    localStorage.setItem(PERSONALITY_KEY, id);
+  };
+
+  const systemPrompt = () => {
+    const p = PERSONALITIES.find((x) => x.id === personality);
+    const base = p ? `${FALLBACK_SYSTEM} Style: ${p.system}` : FALLBACK_SYSTEM;
+    return skill ? `${skill}\n\n${base}` : base;
+  };
 
   const send = async () => {
     const text = input.trim();
     if (!text || sending) return;
-    if (!selectedProvider || !selectedModel) {
+    if (!provider || !model) {
       setError(
         "No local LLM selected. Start Ollama or LM Studio, then re-probe in Settings.",
       );
@@ -60,14 +147,14 @@ export function ChatPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          provider: selectedProvider,
-          model: selectedModel,
-          messages: [{ role: "system", content: SYSTEM }, ...next],
+          provider,
+          model,
+          messages: [{ role: "system", content: systemPrompt() }, ...next],
         }),
       });
       if (!res.success) throw new Error(res.message ?? "chat failed");
       const reply = res.data.choices[0]?.message?.content ?? "(empty reply)";
-      setMessages([...next, { role: "assistant", content: reply }]);
+      setMessages([...next, { role: "assistant" as const, content: reply }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "send failed");
     } finally {
@@ -75,31 +162,97 @@ export function ChatPage() {
     }
   };
 
+  const exportTxt = () => {
+    const body = messages
+      .map((m) => `${m.role.toUpperCase()}:\n${m.content}`)
+      .join("\n\n---\n\n");
+    const blob = new Blob([body], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "iptv-chat.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const clear = () => {
+    setMessages([]);
+    localStorage.removeItem(HISTORY_KEY);
+  };
+
   return (
-    <div>
+    <div data-testid="chat-page">
       <PageHeader
         title="Chat"
-        sub={`${selectedProvider || "no provider"} · ${selectedModel || "no model"} · ${availableModels.length} models`}
+        sub={`${provider || "no provider"} · ${model || "no model"} · ${modelCount} models${skill ? " · skill-loaded" : ""}`}
       >
         <button
           type="button"
-          onClick={() => {
-            setMessages([]);
-            localStorage.removeItem(HISTORY_KEY);
-          }}
+          onClick={exportTxt}
+          disabled={messages.length === 0}
+          data-testid="chat-export"
+          className="rounded-lg border border-input px-3 py-1.5 text-sm hover:bg-secondary disabled:opacity-40"
+        >
+          Export
+        </button>
+        <button
+          type="button"
+          onClick={clear}
+          disabled={messages.length === 0}
           data-testid="chat-clear"
-          className="rounded-lg border border-input px-3 py-1.5 text-sm hover:bg-secondary"
+          className="rounded-lg border border-input px-3 py-1.5 text-sm hover:bg-secondary disabled:opacity-40"
         >
           Clear
         </button>
       </PageHeader>
+      <div
+        className="mb-4 flex flex-wrap items-center gap-2"
+        data-testid="chat-controls"
+      >
+        <label
+          className="text-sm text-muted-foreground"
+          htmlFor="chat-personality"
+        >
+          Personality
+        </label>
+        <select
+          id="chat-personality"
+          value={personality}
+          onChange={(e) => pickPersonality(e.target.value)}
+          data-testid="personality-select"
+          className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm"
+        >
+          {PERSONALITIES.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+      </div>
       {error ? (
         <Card className="mb-4 border-red-500/40 text-sm text-red-400">
           {error}
         </Card>
       ) : null}
       {messages.length === 0 ? (
-        <EmptyState text="Ask about channels, playlists, EPG or Jellyfin import. History persists locally." />
+        <>
+          <EmptyState text="Ask about channels, playlists, EPG or Jellyfin import. History persists locally." />
+          <div
+            className="mt-3 flex flex-wrap gap-2"
+            data-testid="example-prompts"
+          >
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                onClick={() => setInput(ex)}
+                className="rounded-lg border border-input px-3 py-1.5 text-sm hover:bg-secondary"
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
+        </>
       ) : (
         <div className="mb-4 space-y-2" data-testid="chat-messages">
           {messages.map((m) => (

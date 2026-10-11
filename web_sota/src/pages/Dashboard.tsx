@@ -6,9 +6,9 @@ import { api } from "@/lib/api";
 export function Dashboard() {
   const [stats, setStats] = useState({
     channels: "…",
-    streams: "…",
-    guides: "…",
     playlists: "…",
+    tools: "…",
+    version: "…",
   });
   const [error, setError] = useState("");
 
@@ -16,16 +16,18 @@ export function Dashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const [facets, lists] = await Promise.all([
+        const [facets, lists, tools, health] = await Promise.all([
           api<{ success: boolean; channel_count: number }>("/api/iptv/facets"),
           api<{ success: boolean; data: { count: number } }>("/api/playlists"),
+          api<{ success: boolean; data: { count: number } }>("/api/tools"),
+          api<{ status: string; version: string }>("/api/health"),
         ]);
         if (!cancelled) {
           setStats({
             channels: String(facets.channel_count ?? "—"),
-            streams: "—",
-            guides: "—",
             playlists: String(lists.data.count ?? 0),
+            tools: String(tools.data.count ?? 0),
+            version: String(health.version ?? "—"),
           });
         }
       } catch (e) {
@@ -60,6 +62,18 @@ export function Dashboard() {
           </Link>
         </p>
       </Card>
+      <Card className="mb-4 border-red-500/40" data-testid="onboarding-cue">
+        <p className="text-sm">
+          New here? No account or key needed — start with the guided path, then
+          build your first playlist.
+        </p>
+        <Link
+          to="/help"
+          className="mt-2 inline-block rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
+        >
+          Start onboarding
+        </Link>
+      </Card>
       {error ? (
         <Card className="mb-4 border-red-500/40 text-sm text-red-400">
           {error}
@@ -72,8 +86,8 @@ export function Dashboard() {
           value={stats.playlists}
           testid="kpi-playlists"
         />
-        <Stat label="Backend" value="11242" testid="kpi-backend" />
-        <Stat label="Frontend" value="11241" testid="kpi-frontend" />
+        <Stat label="MCP tools" value={stats.tools} testid="kpi-tools" />
+        <Stat label="Version" value={stats.version} testid="kpi-version" />
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <Card>

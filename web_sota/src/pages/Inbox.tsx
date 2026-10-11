@@ -55,11 +55,18 @@ export function InboxPage() {
           {refreshing ? "Refreshing… (slow)" : "Refresh upstream"}
         </button>
       </PageHeader>
-      {message ? <Card className="mb-4 text-sm">{message}</Card> : null}
+      {message ? (
+        <Card className="mb-4 text-sm" data-testid="inbox-message">
+          {message}
+        </Card>
+      ) : null}
       {datasets ? (
-        <Card className="mb-4">
+        <Card className="mb-4" data-testid="inbox-datasets">
           <div className="text-sm font-semibold">Dataset row counts</div>
-          <div className="mt-1 grid grid-cols-2 gap-1 text-xs text-muted-foreground md:grid-cols-5">
+          <div
+            className="mt-1 grid grid-cols-2 gap-1 text-sm text-muted-foreground md:grid-cols-5"
+            data-testid="inbox-counts"
+          >
             {Object.entries(datasets).map(([k, v]) => (
               <div key={k}>
                 {k}: <strong className="text-foreground">{v}</strong>

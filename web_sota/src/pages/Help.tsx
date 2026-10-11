@@ -33,9 +33,10 @@ const BODY: Record<(typeof TABS)[number], string[]> = {
   "API + ports": [
     "Backend 11242: REST /api/*, MCP at POST /mcp, Swagger at /docs, ReDoc at /redoc.",
     "Frontend 11241: this app, proxies /api /mcp /docs /openapi.json /redoc.",
-    "Key routes: /api/health, /api/tools, /api/playlists, /api/playlists/*.m3u, /api/logs.",
+    "Key routes: /api/health, /api/tools, /api/capabilities, /api/playlists, /api/playlists/*.m3u, /api/logs.",
     "IPTV bridge: /api/iptv/facets, /search, /playlist, /epg, POST /refresh.",
-    "LLM: /api/llm/discover, /api/llm/ollama_state, /api/llm/gpus, POST /api/llm/chat.",
+    "LLM: /api/llm/discover, /providers, /models, /onboarding, POST /api/llm/chat, POST /api/llm/chat/stream, POST /api/chat.",
+    "Shutdown: POST /api/shutdown (orderly exit for restarts).",
   ],
   "Fix errors": [
     "Empty playlist (kept=0): filters too tight — drop Probe, widen country/category, Refresh first.",
@@ -57,7 +58,7 @@ export function HelpPage() {
   return (
     <div>
       <PageHeader title="Help" sub="Wrappee, workflows, API, and fixes" />
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div className="mb-3 flex flex-wrap gap-1.5" data-testid="help-tabs">
         {TABS.map((t) => (
           <button
             type="button"

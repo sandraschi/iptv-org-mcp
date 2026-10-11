@@ -85,7 +85,7 @@ export function GuidePage() {
             {(g.sources ?? []).map((s) => (
               <code
                 key={s.url}
-                className="mt-1 block break-all text-xs text-amber-300"
+                className="mt-1 block break-all text-sm text-amber-300"
               >
                 {s.url}
               </code>
