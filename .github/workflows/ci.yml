@@ -15,14 +15,12 @@ jobs:
       - run: uv run ruff format --check src tests
       - run: uv run pyright src
       - run: uv run pytest -q
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - run: npm ci
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
         working-directory: web_sota
-      - run: npm run biome:ci
+      - run: bun run biome:ci
         working-directory: web_sota
-      - run: npm run check
+      - run: bun run check
         working-directory: web_sota
 
   e2e:
@@ -30,17 +28,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
+      - uses: oven-sh/setup-bun@v2
       - run: uv sync --group dev
-      - run: npm ci
+      - run: bun install --frozen-lockfile
         working-directory: web_sota
-      - run: npx playwright install chromium
+      - run: bunx playwright install chromium
         working-directory: web_sota
       - name: start backend
         run: Start-Process -FilePath "uv" -ArgumentList "run python -m iptv_org_mcp --serve --port 11242" -PassThru | Out-Null; Start-Sleep -Seconds 12
       - name: start frontend
-        run: Start-Process -FilePath "npm" -ArgumentList "run dev" -WorkingDirectory "web_sota" -PassThru | Out-Null; Start-Sleep -Seconds 12
-      - run: npm run e2e
+        run: Start-Process -FilePath "bun" -ArgumentList "run dev" -WorkingDirectory "web_sota" -PassThru | Out-Null; Start-Sleep -Seconds 12
+      - name: warm upstream cache (cold snapshots are slow)
+        run: Invoke-WebRequest 'http://127.0.0.1:11242/api/iptv/refresh' -UseBasicParsing -Method POST -TimeoutSec 600 | Out-Null
+      - run: bun run e2e
         working-directory: web_sota

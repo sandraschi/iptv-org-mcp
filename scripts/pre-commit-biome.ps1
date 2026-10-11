@@ -20,12 +20,12 @@ if (-not $webRoot) {
 Push-Location $webRoot
 try {
     if (-not (Test-Path "node_modules")) {
-        npm ci --silent
+        bun install
         if ($LASTEXITCODE -ne 0) {
             npm install --silent
         }
     }
-    npm run biome:ci
+    bun run biome:ci
     exit $LASTEXITCODE
 }
 finally {

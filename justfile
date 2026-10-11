@@ -27,13 +27,13 @@ ci:
 bootstrap:
     uv sync --group dev
     uv run pre-commit install
-    cd web_sota; npm ci
+    cd web_sota; bun install
 
 e2e:
-    cd web_sota; npm run e2e
+    cd web_sota; bun run e2e
 
 cua-webapp-test:
-    cd web_sota; npm run e2e
+    cd web_sota; bun run e2e
 
 mcpb-pack:
     powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mcpb-pack.ps1
