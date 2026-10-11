@@ -100,6 +100,8 @@ proof) and writes `dist/`:
 * `iptv-org-mcp.mcpb` - stable name for `releases/latest/download/`
 * `install.ps1` - Claude Desktop one-liner installer (generated, SHA256-pinned)
 
-Attach all three to the GitHub release when `sandraschi/iptv-org-mcp`
-goes public; until then the one-liner stays dormant and local installs
-use the file directly.
+Latest release (v0.2.1) carries all three assets. One-line install:
+
+```powershell
+irm https://github.com/sandraschi/iptv-org-mcp/releases/latest/download/install.ps1 | iex
+```
