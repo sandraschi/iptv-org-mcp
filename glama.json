@@ -1,7 +1,7 @@
 {
   "name": "iptv-org-mcp",
   "description": "Curated free linear TV: iptv-org channel discovery, health-filtered M3U builder, EPG lookup, VLC + Jellyfin handoff",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Sandra Schipal",
   "license": "MIT",
   "repository": "https://github.com/sandraschi/iptv-org-mcp",

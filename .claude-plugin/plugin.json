@@ -1,1 +1,1 @@
-{"description": "Curated free linear TV: iptv-org channel discovery, health-filtered M3U builder, EPG lookup, VLC + Jellyfin handoff", "hooks": "../hooks/hooks.json", "name": "iptv-org-mcp", "version": "0.2.0"}
+{"description": "Curated free linear TV: iptv-org channel discovery, health-filtered M3U builder, EPG lookup, VLC + Jellyfin handoff", "hooks": "../hooks/hooks.json", "name": "iptv-org-mcp", "version": "0.2.1"}

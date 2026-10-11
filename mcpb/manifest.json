@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "iptv-org-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Curated free linear TV: iptv-org channel discovery, health-filtered M3U playlists, EPG lookup, VLC + Jellyfin handoff",
   "author": { "name": "Sandra Schipal" },
   "server": {

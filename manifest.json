@@ -1,6 +1,6 @@
 {
   "name": "iptv-org-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "iptv-org MCP server - free linear TV discovery and health-filtered playlists",
   "backend_port": 11242,
   "frontend_port": 11241,
