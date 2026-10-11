@@ -61,6 +61,10 @@ logs/
 .coverage
 htmlcov/
 
+# Playwright e2e artifacts (regenerable)
+test-results/
+playwright-report/
+
 # Fleet backup artifacts (both patterns required)
 *.bak
 *.bak.*
