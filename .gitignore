@@ -64,3 +64,6 @@ htmlcov/
 # Fleet backup artifacts (both patterns required)
 *.bak
 *.bak.*
+
+# Assfix working snapshots (regenerable; committed copy lives in docs/assess-reports/)
+reports/
