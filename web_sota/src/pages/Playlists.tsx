@@ -134,12 +134,12 @@ export function PlaylistsPage() {
               type="button"
               onClick={() => copy(result.playlist_url)}
               data-testid="playlist-copy"
-              className="rounded-lg border border-input px-3 py-1 text-xs hover:bg-secondary"
+              className="rounded-lg border border-input px-3 py-1 text-sm hover:bg-secondary"
             >
               Copy URL
             </button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             VLC: Media → Open Network Stream → paste. Jellyfin: Dashboard → Live
             TV → M3U tuner → paste.
           </p>
@@ -168,7 +168,7 @@ export function PlaylistsPage() {
                 type="button"
                 onClick={() => copy(p.url)}
                 data-testid={`playlist-copy-${p.name}`}
-                className="rounded-lg border border-input px-3 py-1 text-xs hover:bg-secondary"
+                className="rounded-lg border border-input px-3 py-1 text-sm hover:bg-secondary"
               >
                 Copy URL
               </button>

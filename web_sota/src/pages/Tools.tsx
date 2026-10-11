@@ -28,14 +28,17 @@ export function ToolsPage() {
         sub="Live MCP surface, discovered from the backend — never hardcoded"
       />
       {error ? (
-        <Card className="mb-4 border-red-500/40 text-sm text-red-400">
+        <Card
+          className="mb-4 border-red-500/40 text-sm text-red-400"
+          data-testid="tools-error"
+        >
           {error}
         </Card>
       ) : null}
       {tools.length === 0 && !error ? (
         <EmptyState text="Loading tools…" />
       ) : null}
-      <div className="space-y-2">
+      <div className="space-y-2" data-testid="tools-list">
         {tools.map((t) => (
           <Card key={t.name}>
             <button
@@ -72,7 +75,12 @@ export function ToolsPage() {
                   </div>
                 ) : null}
                 {t.hint ? (
-                  <p className="mt-2 text-xs text-muted-foreground">{t.hint}</p>
+                  <p
+                    className="mt-2 text-sm text-muted-foreground"
+                    data-testid="tools-hint"
+                  >
+                    {t.hint}
+                  </p>
                 ) : null}
               </div>
             ) : null}

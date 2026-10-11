@@ -53,14 +53,17 @@ export function SkillsPage() {
         sub="Expert instructions shipped by the server"
       />
       {error ? (
-        <Card className="mb-4 border-red-500/40 text-sm text-red-400">
+        <Card
+          className="mb-4 border-red-500/40 text-sm text-red-400"
+          data-testid="skills-error"
+        >
           {error}
         </Card>
       ) : null}
       {skills.length === 0 && !error ? (
         <EmptyState text="No skills shipped yet." />
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="skills-list">
           {skills.map((s) => (
             <Card key={s.name}>
               <button
@@ -77,7 +80,7 @@ export function SkillsPage() {
                 </span>
               </button>
               {s.description ? (
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {s.description}
                 </p>
               ) : null}

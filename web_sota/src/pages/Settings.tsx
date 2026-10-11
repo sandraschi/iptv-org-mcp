@@ -34,14 +34,15 @@ export function SettingsPage() {
           >
             {health ? JSON.stringify(health, null, 2) : "probing…"}
           </pre>
-          <div className="mt-2 text-xs text-muted-foreground">
-            Ports: backend 11242 · frontend 11241 · MCP at <code>/mcp</code>
+          <div className="mt-2 text-sm text-muted-foreground">
+            Backend + frontend pair · MCP at <code>/mcp</code> · ports and
+            routes in Help → API + ports
           </div>
         </Card>
         <Card>
           <h2 className="mb-2 font-semibold">Local LLM</h2>
           <label
-            className="mb-1 block text-xs text-muted-foreground"
+            className="mb-1 block text-sm text-muted-foreground"
             htmlFor="llm-provider"
           >
             Provider
@@ -63,7 +64,7 @@ export function SettingsPage() {
             ))}
           </select>
           <label
-            className="mb-1 block text-xs text-muted-foreground"
+            className="mb-1 block text-sm text-muted-foreground"
             htmlFor="llm-model"
           >
             Model
@@ -85,7 +86,7 @@ export function SettingsPage() {
           {llm.gpus.length > 1 ? (
             <>
               <label
-                className="mb-1 block text-xs text-muted-foreground"
+                className="mb-1 block text-sm text-muted-foreground"
                 htmlFor="llm-gpu"
               >
                 Target GPU (primary stays free for resident models)
@@ -114,7 +115,7 @@ export function SettingsPage() {
             Re-probe
           </button>
           {llm.providers.length === 0 && llm.probed ? (
-            <p className="mt-2 text-xs text-amber-400">
+            <p className="mt-2 text-sm text-amber-400">
               Install Ollama or LM Studio to enable AI features.
             </p>
           ) : null}
