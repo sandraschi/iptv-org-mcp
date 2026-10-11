@@ -13,4 +13,34 @@ jobs:
       - run: uv sync --group dev
       - run: uv run ruff check src tests
       - run: uv run ruff format --check src tests
+      - run: uv run pyright src
       - run: uv run pytest -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+        working-directory: web_sota
+      - run: npm run biome:ci
+        working-directory: web_sota
+      - run: npm run check
+        working-directory: web_sota
+
+  e2e:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: uv sync --group dev
+      - run: npm ci
+        working-directory: web_sota
+      - run: npx playwright install chromium
+        working-directory: web_sota
+      - name: start backend
+        run: Start-Process -FilePath "uv" -ArgumentList "run python -m iptv_org_mcp --serve --port 11242" -PassThru | Out-Null; Start-Sleep -Seconds 12
+      - name: start frontend
+        run: Start-Process -FilePath "npm" -ArgumentList "run dev" -WorkingDirectory "web_sota" -PassThru | Out-Null; Start-Sleep -Seconds 12
+      - run: npm run e2e
+        working-directory: web_sota
