@@ -19,13 +19,22 @@ if (-not $webRoot) {
 
 Push-Location $webRoot
 try {
+    # bun lives off-PATH by design; automation contexts (git hooks) often run
+    # with a stale PATH snapshot, so resolve it explicitly with npm fallback.
+    $bunExe = Join-Path $env:USERPROFILE ".bun\bin\bun.exe"
+    $hasBun = Test-Path -LiteralPath $bunExe
     if (-not (Test-Path "node_modules")) {
-        bun install
-        if ($LASTEXITCODE -ne 0) {
+        if ($hasBun) {
+            & $bunExe install
+        } else {
             npm install --silent
         }
     }
-    bun run biome:ci
+    if ($hasBun) {
+        & $bunExe run biome:ci
+    } else {
+        npm run biome:ci
+    }
     exit $LASTEXITCODE
 }
 finally {

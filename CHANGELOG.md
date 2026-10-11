@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.2.1 - 2026-10-11 (assfix)
+## 0.2.1 - 2026-10-12
+
+* Frontend on Bun (`bun.lock` committed, `package-lock.json` removed,
+  `PackageManager: bun`, CI uses `oven-sh/setup-bun`); Vite still runs on
+  Node (Phase 1, zero runtime risk).
+* Webapp: Ctrl+K/Cmd+K jumps to Channels search (topbar hint, Help FAQ,
+  e2e-covered); `Card` now forwards extra props (fixes silently dropped
+  `data-testid`s); CI e2e warms the upstream cache first.
+* E2E: 5/5 green live (dashboard, nav, playlist builder, chat, ctrl+k).
+* Assfix batch (2026-10-11):
 
 * Backend: `GET /api/capabilities`, `/api/llm/providers`, `/api/llm/models`,
   `/api/llm/onboarding`, `POST /api/chat` + `/api/llm/chat/stream` (SSE),

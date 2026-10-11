@@ -15,7 +15,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/cn";
 
 const NAV = [
@@ -36,12 +36,15 @@ const NAV = [
 export function Card({
   className,
   children,
+  ...rest
 }: {
   className?: string;
   children: React.ReactNode;
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("glass rounded-xl p-4", className)}>{children}</div>
+    <div className={cn("glass rounded-xl p-4", className)} {...rest}>
+      {children}
+    </div>
   );
 }
 
@@ -101,6 +104,23 @@ export function AppLayout() {
   );
   const [health, setHealth] = useState<"ok" | "down" | "probing">("probing");
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (location.pathname !== "/channels") navigate("/channels");
+        window.setTimeout(() => {
+          document
+            .querySelector<HTMLInputElement>('[data-testid="channels-query"]')
+            ?.focus();
+        }, 80);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [location.pathname, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,6 +228,13 @@ export function AppLayout() {
             >
               Logs
             </Link>
+            <span
+              title="Ctrl+K jumps to Channels search"
+              data-testid="topbar-shortcut-hint"
+              className="hidden rounded-md border border-input px-1.5 py-0.5 font-mono md:inline"
+            >
+              Ctrl+K
+            </span>
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 p-4">

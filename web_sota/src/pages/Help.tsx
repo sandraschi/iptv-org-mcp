@@ -50,6 +50,7 @@ const BODY: Record<(typeof TABS)[number], string[]> = {
     "Why do channels die? Upstream volunteers re-check continuously; some go offline or geo-block.",
     "Do you proxy video? Never. The server only serves links, JSON and generated M3U text.",
     "Where is data cached? ./data (snapshots) + ./data/playlists (generated M3Us), 24h TTL.",
+    "Keyboard: Ctrl+K (or Cmd+K) jumps to Channels and focuses search.",
   ],
 };
 

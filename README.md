@@ -21,8 +21,8 @@ Frontend:
 
 ```powershell
 cd web_sota
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Or double-click `start.bat` (backend + frontend, ports 11242/11241).
@@ -74,8 +74,9 @@ Registered in `mcp-central-docs/operations/WEBAPP_PORTS.md`.
 
 Backend: Python 3.12+, FastMCP 3.4.x, FastAPI, uvicorn, httpx, pydantic v2,
 prefab-ui. Frontend (`web_sota/`): React 19 + Vite 6 + TailwindCSS 3 +
-Lucide + Framer Motion + Zustand + React Router. Lint: ruff (T20) + pyright +
-biome + tsc. Tests: pytest (30% gate) + Playwright smoke.
+Lucide + Framer Motion + Zustand + React Router, installed via Bun
+(`bun.lock` committed; Node.js still required as Vite runs on Node).
+Lint: ruff (T20) + pyright + biome + tsc. Tests: pytest (30% gate) + Playwright smoke.
 
 ## MCP surface
 
@@ -95,7 +96,7 @@ MIT (this wrapper). Upstream: Unlicense/CC0.
 pollution checks, 3-4-100 prompt gate, pack, launch-from-clean-unpack
 proof) and writes `dist/`:
 
-* `iptv-org-mcp-v0.2.0.mcpb` - versioned archive
+* `iptv-org-mcp-v0.2.1.mcpb` - versioned archive
 * `iptv-org-mcp.mcpb` - stable name for `releases/latest/download/`
 * `install.ps1` - Claude Desktop one-liner installer (generated, SHA256-pinned)
 
