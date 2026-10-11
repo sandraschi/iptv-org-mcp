@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
 from typing import Annotated, Literal
 
+from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from iptv_org_mcp._mcp import mcp
@@ -15,6 +17,8 @@ from iptv_org_mcp.services import store as mem
 from iptv_org_mcp.services.health import probe_streams
 from iptv_org_mcp.services.jellyfin_export import jellyfin_handoff
 from iptv_org_mcp.services.playlist import build_m3u
+
+logger = logging.getLogger("iptv-org-mcp")
 
 Operation = Literal[
     "search_channels",
@@ -32,19 +36,40 @@ Operation = Literal[
 ]
 
 
-async def _ensure(name: str) -> list | dict:
+async def _ensure(name: str) -> list:
+    """Return a dataset snapshot as a list (coerce unexpected shapes to [])."""
     cached = mem.get_snapshot(name)
-    if cached is not None:
+    if isinstance(cached, list):
         return cached
     data, _ = cache.load_snapshot(name)
     if data is None:
         data = await api_client.fetch_json(name)
         cache.save_snapshot(name, data)
+    if not isinstance(data, list):
+        logger.warning("_ensure(%s): expected list, got %s - returning []", name, type(data).__name__)
+        data = []
     mem.set_snapshot(name, data)
     return data
 
 
-@mcp.tool(app=True)
+IPTV_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=True,
+)
+
+IPTV_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+    },
+    "required": ["success", "message"],
+}
+
+
+@mcp.tool(app=True, annotations=IPTV_ANNOTATIONS, output_schema=IPTV_OUTPUT_SCHEMA)
 async def iptv(
     operation: Annotated[Operation, Field(description="Operation to perform")] = "status",
     query: Annotated[str, Field(description="Search text for channels/streams")] = "",
@@ -203,5 +228,6 @@ async def iptv(
             subprocess.Popen([vlc, target])
             return {"success": True, "message": f"launched in VLC: {target}", "url": target}
         except Exception as exc:
+            logger.exception("play_in_vlc launch failed for %s", target)
             return {"success": False, "message": f"VLC launch failed: {exc}", "url": target}
     return {"success": False, "message": f"unknown operation '{op}'"}

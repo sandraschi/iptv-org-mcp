@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import threading
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -11,7 +12,7 @@ import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from iptv_org_mcp import tools  # noqa: F401  (tool registration side-effect)
 from iptv_org_mcp._mcp import mcp
@@ -91,6 +92,30 @@ async def api_tools():
                 entry["operations"] = []
         tools_out.append(entry)
     return {"success": True, "data": {"tools": tools_out, "count": len(tools_out)}}
+
+
+@app.get("/api/capabilities")
+async def api_capabilities():
+    """Standard capability surface for the webapp and fleet discovery."""
+    tool_list = await mcp.list_tools()
+    return {
+        "success": True,
+        "data": {
+            "server": "iptv-org MCP",
+            "version": "0.2.0",
+            "transports": ["stdio", "streamable-http"],
+            "mcp_path": "/mcp",
+            "tools": [{"name": t.name, "description": t.description} for t in tool_list],
+            "features": {
+                "playlists": True,
+                "epg": True,
+                "llm_proxy": True,
+                "skills": True,
+                "vlc_handoff": True,
+                "jellyfin_handoff": True,
+            },
+        },
+    }
 
 
 @app.get("/api/playlists/{name}")
@@ -253,9 +278,8 @@ _LLM_PROVIDERS: list[dict] = [
 ]
 
 
-@app.get("/api/llm/discover")
-async def api_llm_discover():
-    """Probe local LLM providers (Ollama / LM Studio / vLLM) for Settings + Chat."""
+async def _discover_providers() -> list[dict]:
+    """Probe local LLM providers (Ollama / LM Studio / vLLM)."""
     discovered = []
     async with httpx.AsyncClient(timeout=3) as client:
         for provider in _LLM_PROVIDERS:
@@ -278,7 +302,75 @@ async def api_llm_discover():
                 )
             except Exception:
                 continue
+    return discovered
+
+
+@app.get("/api/llm/discover")
+async def api_llm_discover():
+    """Probe local LLM providers (Ollama / LM Studio / vLLM) for Settings + Chat."""
+    discovered = await _discover_providers()
     return {"success": True, "data": {"providers": discovered, "count": len(discovered)}}
+
+
+@app.get("/api/llm/providers")
+async def api_llm_providers():
+    """Provider registry: local detected flags + cloud configured flags (never keys)."""
+    discovered = await _discover_providers()
+    by_name = {p["name"]: p for p in discovered}
+    out = []
+    for name, base in (
+        ("ollama", "http://127.0.0.1:11434"),
+        ("lmstudio", "http://127.0.0.1:1234"),
+        ("vllm", "http://127.0.0.1:8000"),
+    ):
+        hit = by_name.get(name)
+        out.append(
+            {
+                "name": name,
+                "local": hit is not None,
+                "configured": hit is not None,
+                "base": base,
+                "models": hit["models"] if hit else [],
+            }
+        )
+    for name in ("openai", "anthropic"):
+        out.append({"name": name, "local": False, "configured": False, "base": "", "models": []})
+    return {"success": True, "data": {"providers": out, "count": len(out)}}
+
+
+@app.get("/api/llm/models")
+async def api_llm_models(provider: str = "ollama"):
+    """Model list for one provider: live when reachable, honest empty otherwise."""
+    discovered = await _discover_providers()
+    hit = next((p for p in discovered if p["name"] == provider.lower()), None)
+    if hit is not None:
+        return {"success": True, "data": {"provider": hit["name"], "models": hit["models"], "live": True}}
+    return {
+        "success": True,
+        "data": {
+            "provider": provider.lower(),
+            "models": [],
+            "live": False,
+            "hint": "provider not reachable - start Ollama/LM Studio or pick another provider",
+        },
+    }
+
+
+@app.get("/api/llm/onboarding")
+async def api_llm_onboarding():
+    """Fresh-install starter facts + recommended path for the under-hero cue."""
+    return {
+        "success": True,
+        "data": {
+            "facts": [
+                "No account or key needed: channel data comes from the public iptv-org CDN.",
+                "VLC plays the generated M3U URL (Media -> Open Network Stream).",
+                "Jellyfin Live TV imports the M3U tuner plus XMLTV guide URLs.",
+                "Streams die or geo-block: rebuild with probe=true when playback is black.",
+            ],
+            "recommended_path": "facets -> search_channels -> build_playlist -> VLC or jellyfin_setup",
+        },
+    }
 
 
 @app.get("/api/llm/ollama_state")
@@ -324,12 +416,49 @@ async def api_llm_gpus():
     return {"success": True, "data": {"gpus": gpus, "count": len(gpus)}}
 
 
+async def _proxy_chat(provider: str, model: str, messages: list, base: str | None) -> dict:
+    """Shared backend chat proxy (loopback bases only, keys never leave the server)."""
+    bases = {
+        "ollama": "http://127.0.0.1:11434",
+        "lmstudio": "http://127.0.0.1:1234",
+        "vllm": "http://127.0.0.1:8000",
+    }
+    resolved = base or bases.get(provider, bases["ollama"])
+    if not resolved.startswith(("http://127.0.0.1:", "http://localhost:")):
+        return _error_response("only loopback LLM bases are allowed", "forbidden")
+    try:
+        async with httpx.AsyncClient(timeout=180) as client:
+            r = await client.post(
+                f"{resolved}/v1/chat/completions",
+                json={"model": model, "messages": messages, "stream": False},
+            )
+    except Exception as exc:
+        return _error_response(f"LLM backend unreachable at {resolved}: {exc}", "llm_down")
+    if r.status_code != 200:
+        return _error_response(f"LLM backend returned {r.status_code}: {r.text[:200]}", "llm_error")
+    return {"success": True, "data": r.json()}
+
+
 @app.post("/api/llm/chat")
 async def api_llm_chat(body: dict):
     """Proxy chat completions to a local provider (never expose keys; none needed).
 
     Body: {provider, model, messages, base?}. Only loopback bases allowed.
     """
+    provider = (body.get("provider") or "ollama").lower()
+    return await _proxy_chat(provider, body.get("model", ""), body.get("messages", []), body.get("base"))
+
+
+@app.post("/api/chat")
+async def api_chat(body: dict):
+    """Canonical chat endpoint (alias over the local-LLM proxy). Body: {messages, provider?, model?, base?}."""
+    provider = (body.get("provider") or "ollama").lower()
+    return await _proxy_chat(provider, body.get("model", ""), body.get("messages", []), body.get("base"))
+
+
+@app.post("/api/llm/chat/stream")
+async def api_llm_chat_stream(body: dict):
+    """Streaming chat proxy (SSE, OpenAI-style chunks). Body: {provider, model, messages, base?}."""
     provider = (body.get("provider") or "ollama").lower()
     model = body.get("model", "")
     messages = body.get("messages", [])
@@ -338,20 +467,41 @@ async def api_llm_chat(body: dict):
         "lmstudio": "http://127.0.0.1:1234",
         "vllm": "http://127.0.0.1:8000",
     }
-    base = body.get("base") or bases.get(provider, bases["ollama"])
-    if not base.startswith(("http://127.0.0.1:", "http://localhost:")):
+    resolved = body.get("base") or bases.get(provider, bases["ollama"])
+    if not resolved.startswith(("http://127.0.0.1:", "http://localhost:")):
         return _error_response("only loopback LLM bases are allowed", "forbidden")
-    try:
-        async with httpx.AsyncClient(timeout=180) as client:
-            r = await client.post(
-                f"{base}/v1/chat/completions",
-                json={"model": model, "messages": messages, "stream": False},
-            )
-    except Exception as exc:
-        return _error_response(f"LLM backend unreachable at {base}: {exc}", "llm_down")
-    if r.status_code != 200:
-        return _error_response(f"LLM backend returned {r.status_code}: {r.text[:200]}", "llm_error")
-    return {"success": True, "data": r.json()}
+
+    async def gen():
+        try:
+            async with httpx.AsyncClient(timeout=180) as client:
+                async with client.stream(
+                    "POST",
+                    f"{resolved}/v1/chat/completions",
+                    json={"model": model, "messages": messages, "stream": True},
+                ) as r:
+                    if r.status_code != 200:
+                        yield f'data: {{"error": "LLM backend returned {r.status_code}"}}\n\n'
+                        return
+                    async for line in r.aiter_lines():
+                        text = line.strip()
+                        if not text:
+                            continue
+                        if text.startswith("data:"):
+                            yield text + "\n\n"
+                        else:
+                            yield f"data: {text}\n\n"
+        except Exception as exc:
+            yield f'data: {{"error": "LLM backend unreachable at {resolved}: {exc}"}}\n\n'
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@app.post("/api/shutdown")
+async def api_shutdown():
+    """Orderly exit for the fleet launcher: respond 200, then exit ~500 ms later."""
+    threading.Timer(0.5, lambda: os._exit(0)).start()
+    return {"success": True, "message": "iptv-org-mcp shutting down in ~500 ms", "data": {}}
 
 
 @app.get("/favicon.ico", include_in_schema=False)
