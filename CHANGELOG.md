@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.1 - 2026-10-11 (assfix)
+
+* Backend: `GET /api/capabilities`, `/api/llm/providers`, `/api/llm/models`,
+  `/api/llm/onboarding`, `POST /api/chat` + `/api/llm/chat/stream` (SSE),
+  `POST /api/shutdown`; new `iptv_shutdown` tool; `evening_news` +
+  `match_night` prompts; annotations + output_schema on tools; pyright-clean
+  `_ensure` typing; logger.exception on VLC failures.
+* Toolchain: `[dependency-groups]` dev (fixes broken `uv sync --group dev`),
+  prefab-ui core dep, ruff T20; CI now runs ruff + pyright + pytest + biome +
+  tsc + e2e job.
+* Webapp: Chat meets P5 (100-msg cap, personalities, examples, export,
+  skill-first, full testids); Dashboard live KPIs + red onboarding cue;
+  Settings/AppLayout/Inbox/Skills/Tools/Channels/Guide/Playlists testids and
+  text-sm pass; biome clean with scoped `biome ci ./src ./e2e`.
+* Repo: session-injection channels (Claude Code, Cursor, Windsurf, Copilot,
+  OpenCode, Antigravity), pre-commit config + biome hook, .gitattributes,
+  vendored FleetStartMode, reports/ ignored, ports registered in fleet
+  registry, glama/manifest versions at 0.2.0.
+
 ## 0.2.0 - 2026-10-08
 
 * Full webapp (11241): Dashboard, Channels, Playlists, EPG Guide, Inbox,

@@ -66,7 +66,23 @@ MCP: `http://127.0.0.1:11242/mcp` (streamable HTTP) or stdio for Claude Desktop.
 | Port | Service |
 |------|---------|
 | 11242 | Backend FastAPI + FastMCP `/mcp` |
-| 11241 | Frontend (reserved, Stage 2) |
+| 11241 | Frontend (Vite dashboard) |
+
+Registered in `mcp-central-docs/operations/WEBAPP_PORTS.md`.
+
+## Stack
+
+Backend: Python 3.12+, FastMCP 3.4.x, FastAPI, uvicorn, httpx, pydantic v2,
+prefab-ui. Frontend (`web_sota/`): React 19 + Vite 6 + TailwindCSS 3 +
+Lucide + Framer Motion + Zustand + React Router. Lint: ruff (T20) + pyright +
+biome + tsc. Tests: pytest (30% gate) + Playwright smoke.
+
+## MCP surface
+
+Portmanteau `iptv` (12 ops: facets, search_channels, get_channel,
+search_streams, check_streams, build_playlist, get_epg, jellyfin_setup,
+play_in_vlc, status, refresh, help) plus `iptv_shutdown`, 2 prompts
+(`evening_news`, `match_night`), 1 resource (`resource://iptv-org/legal`).
 
 ## Legal
 

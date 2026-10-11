@@ -5,28 +5,37 @@ No video stored or proxied. Upstream: Unlicense/CC0. This wrapper: MIT.
 
 ## MCP
 
-One portmanteau tool `iptv(operation=...)`, 12 ops: help, status, refresh,
+Portmanteau tool `iptv(operation=...)`, 12 ops: help, status, refresh,
 facets, search_channels, get_channel, search_streams, check_streams,
-build_playlist, get_epg, jellyfin_setup, play_in_vlc.
+build_playlist, get_epg, jellyfin_setup, play_in_vlc. Second tool
+`iptv_shutdown` (orderly exit, REST twin POST /api/shutdown).
+Prompts: `evening_news(country)`, `match_night(sport, country)`.
+Resource: `resource://iptv-org/legal`.
+Tool annotations: readOnlyHint=false (mixed read/write), destructiveHint=false,
+openWorldHint=true (upstream CDN). Output schema: {success, message, ...}.
 Transports: stdio (Claude Desktop) + streamable HTTP at POST /mcp.
 
 ## REST (backend 11242, FastAPI)
 
-- GET / (landing), /api/health, /api/tools (with portmanteau drill-down), /api/logs
+- GET / (landing), /api/health, /api/capabilities, /api/tools (with portmanteau drill-down), /api/logs
 - GET /api/playlists, /api/playlists/{name}.m3u (generated M3Us)
-- GET /api/skills, /api/skills/{name} (none shipped yet)
+- GET /api/skills, /api/skills/{name} (iptv-operator)
 - GET /api/iptv/facets, /api/iptv/search?q=&country=&category=
 - GET /api/iptv/playlist?country=AT&category=&probe=&max_entries=
-- GET /api/iptv/epg?channel_id=&query= ; POST /api/iptv/refresh
-- GET /api/llm/discover, /api/llm/ollama_state, /api/llm/gpus ; POST /api/llm/chat
+- GET /api/iptv/epg?channel_id=&query= ; GET /api/iptv/channel?channel_id=
+- POST /api/iptv/play, POST /api/iptv/refresh
+- GET /api/llm/discover, /api/llm/providers, /api/llm/models?provider=, /api/llm/onboarding
+- GET /api/llm/ollama_state, /api/llm/gpus ; POST /api/llm/chat, POST /api/llm/chat/stream (SSE), POST /api/chat
+- POST /api/shutdown (respond 200, exit ~500 ms later)
 - Swagger /docs, ReDoc /redoc, schema /openapi.json
 
 ## Webapp (frontend 11241, React 19 + Vite 6 + Tailwind, dark zinc/amber)
 
-Routes: /dashboard (hero + KPIs + CTA), /channels (search/filter/sort/paginate/count,
+Routes: /dashboard (hero + live KPIs + red onboarding cue), /channels (search/filter/sort/paginate/count,
 grid-list toggle), /playlists (builder + copy URL + history), /guide (EPG lookup),
-/inbox (refresh + artifacts), /tools (dynamic + drill-down), /chat (local LLM,
-history in localStorage), /skills (empty state), /api-docs (swagger/redoc iframe),
+/inbox (refresh + artifacts), /tools (dynamic + drill-down), /chat (skill-first,
+4 personalities, 6 examples, export .txt, 100-msg cap, localStorage),
+/skills (server SKILL.md viewer), /api-docs (swagger/redoc iframe),
 /logs (level + search), /settings (health + LLM provider/model/GPU), /help (6 tabs).
 State: zustand store/llm.ts (keys llm_provider/llm_model/llm_gpu), lib/provider.ts
 (resident-first pickPreferredModel, fitsTarget VRAM guard). testids on all controls.
@@ -44,6 +53,7 @@ probe_timeout 8, probe_max 20, vlc_path. See docs/CONFIGURATION.md.
 ## Fleet
 
 Ports 11241/11242 registered in WEBAPP_PORTS.md. Start: root start.ps1/start.bat,
-web_sota/start.ps1 (dual-mode, byte-copy of fleet template), starts mirror
-mcp-central-docs/starts/iptv-org-mcp-start.bat. CI: ruff + pytest (backend),
-tsc + biome (webapp).
+web_sota/start.ps1 (dual-mode), starts mirror
+mcp-central-docs/starts/iptv-org-mcp-start.bat. CI: ruff + pyright + pytest (backend),
+biome + tsc + Playwright e2e (webapp). Session injection: .cursorrules,
+.windsurfrules, .claude-plugin, copilot-instructions, .opencode + .agents skills.

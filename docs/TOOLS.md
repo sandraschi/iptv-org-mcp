@@ -18,6 +18,19 @@ All calls go through one tool: `iptv(operation=...)`. Dialogic returns
 | `refresh` | re-fetch upstream snapshots (24h TTL otherwise) |
 | `help` | operation list |
 
+## Second tool: `iptv_shutdown`
+
+Graceful self-termination for agents and the fleet launcher (no args).
+Returns `{success, message}` and exits ~500 ms later. REST twin:
+`POST /api/shutdown` (same delayed-exit pattern).
+
+## Prompts (`@mcp.prompt`)
+
+| Prompt | Starter for |
+|--------|-------------|
+| `evening_news(country="AT")` | tonight's news playlist path |
+| `match_night(sport, country="")` | verified sports build with probe |
+
 ## Examples
 
 ```python
