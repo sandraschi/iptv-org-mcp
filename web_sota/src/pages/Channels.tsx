@@ -257,7 +257,7 @@ export function ChannelsPage() {
                 type="button"
                 onClick={() => openChannel(c.id)}
                 data-testid={`channels-open-${c.id}`}
-                className="rounded-lg border border-input px-3 py-1.5 text-xs hover:bg-secondary"
+                className="rounded-lg border border-input px-3 py-1.5 text-sm hover:bg-secondary"
               >
                 {expanded === c.id ? "Hide" : "Streams"}
               </button>
@@ -285,7 +285,7 @@ export function ChannelsPage() {
                       type="button"
                       onClick={() => play(s)}
                       data-testid={`channels-play-${c.id}`}
-                      className="rounded-lg bg-amber-500 px-3 py-1 font-semibold text-black hover:bg-amber-400"
+                      className="rounded-lg bg-amber-500 px-3 py-1 text-sm font-semibold text-black hover:bg-amber-400"
                     >
                       Play
                     </button>
@@ -293,7 +293,7 @@ export function ChannelsPage() {
                       type="button"
                       onClick={() => copyUrl(s.url)}
                       data-testid={`channels-copy-${c.id}`}
-                      className="rounded-lg border border-input px-3 py-1 hover:bg-secondary"
+                      className="rounded-lg border border-input px-3 py-1 text-sm hover:bg-secondary"
                     >
                       Copy URL
                     </button>

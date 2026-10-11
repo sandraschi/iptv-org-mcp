@@ -9,7 +9,7 @@
     "check": "tsc --noEmit",
     "preview": "vite preview",
     "e2e": "playwright test",
-    "biome:ci": "biome ci .",
+    "biome:ci": "biome ci ./src ./e2e",
     "biome": "biome check --write ."
   },
   "dependencies": {

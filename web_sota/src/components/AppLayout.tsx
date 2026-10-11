@@ -56,7 +56,7 @@ export function Stat({
 }) {
   return (
     <Card>
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+      <div className="text-sm uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
       <div
@@ -172,7 +172,7 @@ export function AppLayout() {
             );
           })}
         </nav>
-        <div className="flex items-center gap-2 border-t border-border/60 p-3 text-xs">
+        <div className="flex items-center gap-2 border-t border-border/60 p-3 text-sm">
           <span
             data-testid="backend-health"
             className={cn(
@@ -183,7 +183,7 @@ export function AppLayout() {
             )}
           />
           {!collapsed && (
-            <span className="text-muted-foreground">:11242 {health}</span>
+            <span className="text-muted-foreground">backend {health}</span>
           )}
         </div>
       </aside>
@@ -193,7 +193,7 @@ export function AppLayout() {
             {NAV.find((n) => n.to === location.pathname)?.label ??
               "iptv-org-mcp"}
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link
               to="/help"
               data-testid="topbar-help"
